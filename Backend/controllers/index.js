@@ -5,7 +5,6 @@ import { build } from './builder.js';
 import cors from 'cors';
 import path from 'path';
 import axios from 'axios';
-import * as sql from '../lib/sql.js';
 import {
   schema as tablesSchema, getCache, runQuery, getRows, getRow, getPaginatedRows,
   postRow, editRow, delRow
@@ -495,48 +494,58 @@ export default build([
     },
     action: async (req, res) => {
 
-      const { params, query } = req;
+      try {
+        const subtractTwoMonths = (dateStr) => {
+          const [year, month, day] = dateStr.split('-').map(x => parseInt(x));
+          const monthMinus2 = month > 2 ? month - 2 : month + 10;
+          const yearMinus2 = month > 2 ? year : year - 1;
+          return `${yearMinus2}-${String(monthMinus2).padStart(2, '0')}-01`;
+        };
 
-      const getDaysInMonth = (year, month) => {
-        return new Date(year, month + 1, 0).getDate();
-      };
-      const subtractTwoMonths = (dateStr) => {
-        const [year, month, day] = dateStr.split('-').map(x => parseInt(x));
-        const monthMinus2 = month > 2 ? month - 2 : month + 10;
-        const yearMinus2 = month > 2 ? year : year - 1;
-        return `${yearMinus2}-${String(monthMinus2).padStart(2, '0')}-01`;
-      };
+        const days = generateDateArrayUntilToday('2022-01-01');
+        const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)).toString() }));
 
-      const days = generateDateArrayUntilToday('2022-01-01');
-      const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)).toString() }));
+        const currencies = await getRows('currencies');
+        res.body = Object.entries(days.reduce((p, date) => {
+          p[date] = indexes.filter(indexObj => indexObj.date === date).map(indexObj => ({ ...indexObj, currency: currencies.find(c => c.id === indexObj.currency) }));
 
-      const currencies = await getRows('currencies');
-      res.body = Object.entries(days.reduce((p, date) => {
-        p[date] = indexes.filter(indexObj => indexObj.date === date).map(indexObj => ({ ...indexObj, currency: currencies.find(c => c.id === indexObj.currency) }));
+          return p;
 
-        return p;
+        }, {}))
+          .map(([date, indexesDate], i, arr) => {
+            const monthMinus2 = subtractTwoMonths(date);
+            const cacMinus2 = arr.find(date => date[0] === monthMinus2 && date[1].find(indexObj => indexObj.currency.name === 'CAC'))?.[1]?.find(x => x.currency.name === 'CAC')?.value;
 
-      }, {}))
-        .map(([date, indexesDate], i, arr) => {
-          const monthMinus2 = subtractTwoMonths(date);
-          const cacMinus2 = arr.find(date => date[0] === monthMinus2 && date[1].find(indexObj => indexObj.currency.name === 'CAC'))?.[1]?.find(x => x.currency.name === 'CAC')?.value;
+            return {
+              id: date,
+              date: date,
+              dolar: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar')?.value,
+              cac: indexesDate?.find(indexObj => indexObj.currency.name === 'CAC')?.value,
+              mep: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP')?.value,
+              oficial: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial')?.value,
+              cacMinus2,
+            }
+          }).map((v, i, arr) => ({
+            ...v,
+            dolar: v.dolar || arr[i - 1]?.dolar || arr[i - 2]?.dolar || arr[i - 3]?.dolar || arr[i - 4]?.dolar,
+            mep: v.mep || arr[i - 1]?.mep || arr[i - 2]?.mep || arr[i - 3]?.mep || arr[i - 4]?.mep,
+            oficial: v.oficial || arr[i - 1]?.oficial || arr[i - 2]?.oficial || arr[i - 3]?.oficial || arr[i - 4]?.oficial,
+          }));
+      } catch (error) {
+        console.error("Error en el endpoint:", error);
 
-          return {
-            id: date,
-            date: date,
-            dolar: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar')?.value,
-            cac: indexesDate?.find(indexObj => indexObj.currency.name === 'CAC')?.value,
-            mep: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP')?.value,
-            oficial: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial')?.value,
-            cacMinus2,
-          }
-        }).map((v, i, arr) => ({
-          ...v,
-          dolar: v.dolar || arr[i - 1]?.dolar || arr[i - 2]?.dolar || arr[i - 3]?.dolar || arr[i - 4]?.dolar,
-          mep: v.mep || arr[i - 1]?.mep || arr[i - 2]?.mep || arr[i - 3]?.mep || arr[i - 4]?.mep,
-          oficial: v.oficial || arr[i - 1]?.oficial || arr[i - 2]?.oficial || arr[i - 3]?.oficial || arr[i - 4]?.oficial,
-        }));
-      //fs.writeFileSync('./indexes.json', JSON.stringify(res.body, null, 2));
+        // Enviar email con el error
+        await mailer.sendMail({
+          from: process.env.MAIL_CUPONES_FROM,
+          to: process.env.MAIL_CUPONES_TO,
+          subject: "Error en la obtención de todos los índices",
+          text: `Se ha producido un error en el endpoint:\n\n${error.message}\n\nStack:\n${error.stack}`,
+        });
+
+        // Responder con error
+        res.status(500).json({ error: "Error en la actualización de índices" });
+      }
     }
+
   }
 ]);

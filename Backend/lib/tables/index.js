@@ -18,6 +18,7 @@ const init = async () => {
     const start = Date.now();
     const { user, password, database, host, port } = env.ddbb.connection;
     const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}?sslmode=require`;
+    console.log({connectionString})
     const channel = 'notifications_channel';
     //console.log({...env.tables.pg, ssl: { rejectUnauthorized: false,  ca: fs.readFileSync("./ca-certificate.crt") }})
     const pool = (() => {

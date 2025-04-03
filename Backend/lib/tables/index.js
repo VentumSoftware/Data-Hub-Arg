@@ -349,7 +349,7 @@ D9MhXpcoC//ttKjoqA9SP60u/GvQvkfqMzsZ5OJtd2pbv7W/7w3oHhWqAAmDvgMr
 jLtrsYsj5Akua8r4YB+l8yA3KFNhL9gLMGv9BHyXz2yv02Mavo08OvezrbvYF+k3
 Lg==
 -----END CERTIFICATE-----`,
-                rejectUnauthorized: true,}}) // poner en false solo si estás probando } });
+                rejectUnauthorized: false,}}) // poner en false solo si estás probando } });
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);

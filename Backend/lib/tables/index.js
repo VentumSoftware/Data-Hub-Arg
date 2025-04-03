@@ -323,7 +323,7 @@ const init = async () => {
             });
             //console.log({certif: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString()})
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: {    ca: `-----BEGIN CERTIFICATE-----
+            const subscriber = createSubscriber({ connectionString, ssl: {    ca: `-----BEGIN CERTIFICATE-----
 MIIETTCCArWgAwIBAgIUY0i9vaj1db9n6IQCecTi2tKFRJwwDQYJKoZIhvcNAQEM
 BQAwQDE+MDwGA1UEAww1ZTUzYThjZGYtODQwOS00NmRlLWIyYmItMmRjMDE3NTUy
 YWY1IEdFTiAxIFByb2plY3QgQ0EwHhcNMjUwMjAyMTMyOTM5WhcNMzUwMTMxMTMy

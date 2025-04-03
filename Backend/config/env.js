@@ -15,16 +15,46 @@ export default {
         name: process.env.APP_ADMIN_NAME || 'admin',
         lastName: process.env.APP_ADMIN_LAST_NAME || 'admin'
     },
-    ddbb: {
-        client: 'postgresql',
+    ddbbDev: {
         connection: {
-            database: process.env.SQL_DDBB || 'databank',
-            user: process.env.SQL_USER || 'postgres',
-            password: process.env.SQL_PASSWORD || 'postgres',
+            host: process.env.TABLES_DDBB_CONNECTION_HOST || 'localhost',
+            database: process.env.TABLES_DDBB_CONNECTION_DATABASE || 'databank',
+            user: process.env.TABLES_DDBB_CONNECTION_USER || 'postgres',
+            password: process.env.TABLES_DDBB_CONNECTION_PASSWORD || 'postgres',
+            //ssl: { rejectUnauthorized: false } //Esto es para digitalocean creo
         },
-        pool: { min: parseInt(process.env.SQL_POOL_MIN) || 2, max: parseInt(process.env.SQL_POOL_MAX) || 10 },
-        migrations: { tableName: 'knex_migrations' },
-        seeds: { directory: './data/seeds' }
+        pool: {
+            min: process.env.TABLES_DDBB_POOL_MIN || 2,
+            max: process.env.TABLES_DDBB_POOL_MAX || 10,
+            acquireTimeoutMillis: 60000,
+        },
+        migrations: {
+            tableName: process.env.TABLES_DDBB_MIGRATION_TABLENAME || 'knex_migrations'
+        },
+        seeds: {
+            directory: process.env.TABLES_DDBB_SEEDS_DIRECTORY || './seeds'
+        }
+    },
+    ddbb: {
+        connection: {
+            host: process.env.TABLES_DDBB_CONNECTION_HOST || 'localhost',
+            port: process.env.TABLES_DDBB_CONNECTION_PORT || '5432',
+            database: process.env.TABLES_DDBB_CONNECTION_DATABASE || 'databank',
+            user: process.env.TABLES_DDBB_CONNECTION_USER || 'postgres',
+            password: process.env.TABLES_DDBB_CONNECTION_PASSWORD || 'postgres',
+            ssl: process.env.TABLES_DDBB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        },
+        pool: {
+            min: Number(process.env.TABLES_DDBB_POOL_MIN) || 2,
+            max: Number(process.env.TABLES_DDBB_POOL_MAX) || 10,
+            acquireTimeoutMillis: 60000,
+        },
+        migrations: {
+            tableName: process.env.TABLES_DDBB_MIGRATION_TABLENAME || 'knex_migrations'
+        },
+        seeds: {
+            directory: process.env.TABLES_DDBB_SEEDS_DIRECTORY || './seeds'
+        }
     },
     app: {
         env: process.env.APP_NODE_ENV || 'development',
@@ -79,16 +109,16 @@ export default {
     },
     mailNotification: {
         transport: {
-            host: process.env.MAIL_CUPONES_TRANSPORT_HOST,
-            port: process.env.MAIL_CUPONES_TRANSPORT_PORT || 8082,
-            secure: process.env.MAIL_CUPONES_TRANSPORT_SECURE || "432",
+            host: process.env.MAIL_NOTIFICATIONS_TRANSPORT_HOST,
+            port: process.env.MAIL_NOTIFICATIONS_TRANSPORT_PORT || 8082,
+            secure: process.env.MAIL_NOTIFICATIONS_TRANSPORT_SECURE || "432",
             auth: {
-                user: process.env.MAIL_CUPONES_TRANSPORT_AUTH_USER || "234",
-                pass: process.env.MAIL_CUPONES_TRANSPORT_AUTH_PASS || "234"
+                user: process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_USER || "234",
+                pass: process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_PASS || "234"
             }
         },
-        cc: process.env.MAIL_CUPONES_CC || [],
-        from: process.env.MAIL_CUPONES_FROM || process.env.MAIL_CUPONES_TRANSPORT_AUTH_USER,
-        to: process.env.MAIL_CUPONES_TO || process.env.MAIL_CUPONES_TRANSPORT_AUTH_USER,
+        cc: process.env.MAIL_NOTIFICATIONS_CC || [],
+        from: process.env.MAIL_NOTIFICATIONS_FROM || process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_USER,
+        to: process.env.MAIL_NOTIFICATIONS_TO || process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_USER,
     },
 }

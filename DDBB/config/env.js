@@ -15,7 +15,7 @@ export default {
                 name: process.env.APP_ADMIN_NAME || 'admin',
                 lastName: process.env.APP_ADMIN_LAST_NAME || 'admin'
             },
-            ddbb: {
+            ddbbDev: {
                 connection: {
                     host: process.env.TABLES_DDBB_CONNECTION_HOST || 'localhost',
                     database: process.env.TABLES_DDBB_CONNECTION_DATABASE || 'databank',
@@ -26,6 +26,27 @@ export default {
                 pool: {
                     min: process.env.TABLES_DDBB_POOL_MIN || 2,
                     max: process.env.TABLES_DDBB_POOL_MAX || 10,
+                    acquireTimeoutMillis: 60000,
+                },
+                migrations: {
+                    tableName: process.env.TABLES_DDBB_MIGRATION_TABLENAME || 'knex_migrations'
+                },
+                seeds: {
+                    directory: process.env.TABLES_DDBB_SEEDS_DIRECTORY || './seeds'
+                }
+            },
+            ddbb: {
+                connection: {
+                    host: process.env.TABLES_DDBB_CONNECTION_HOST || 'localhost',
+                    port: process.env.TABLES_DDBB_CONNECTION_PORT || '5432',
+                    database: process.env.TABLES_DDBB_CONNECTION_DATABASE || 'databank',
+                    user: process.env.TABLES_DDBB_CONNECTION_USER || 'postgres',
+                    password: process.env.TABLES_DDBB_CONNECTION_PASSWORD || 'postgres',
+                    ssl: process.env.TABLES_DDBB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+                },
+                pool: {
+                    min: Number(process.env.TABLES_DDBB_POOL_MIN) || 2,
+                    max: Number(process.env.TABLES_DDBB_POOL_MAX) || 10,
                     acquireTimeoutMillis: 60000,
                 },
                 migrations: {

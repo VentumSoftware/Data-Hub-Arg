@@ -320,7 +320,7 @@ const init = async () => {
             });
 
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, } });
+            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: true, } });
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);

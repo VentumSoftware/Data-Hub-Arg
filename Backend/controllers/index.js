@@ -67,7 +67,7 @@ const updateIndexes = async () => {
     const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
       "headers": {
         "accept": "application/json, text/plain, */*",
-        "auth-client": "0022200edebd6eaee37427532323d88b",
+        "auth-client": "446432d32e85275b149bfa3ec40254ba",
         "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "\"Windows\"",
@@ -77,7 +77,10 @@ const updateIndexes = async () => {
       "body": null,
       "method": "GET"
     })
-
+    // Verificar si la respuesta es exitosa
+    if (!dolaritoResponse.ok) {
+      throw new Error(`HTTP Error ${dolaritoResponse.status}: ${dolaritoResponse.statusText}`);
+    };
     const datosCAC = cacResponse.data;
     const datosUVA = uvaResponse.data;
     const datosUVI = uviResponse.data;

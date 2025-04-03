@@ -325,7 +325,6 @@ const init = async () => {
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
             const subscriber = createSubscriber({
                 connectionString, ssl: {
-                  
                     rejectUnauthorized: false,
                 }
             }) // poner en false solo si estás probando } });

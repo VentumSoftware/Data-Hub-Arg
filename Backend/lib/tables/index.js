@@ -20,7 +20,7 @@ const init = async () => {
     const start = Date.now();
     const { user, password, database, host, port } = env.ddbb.connection;
     const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}?sslmode=require`;
-    console.log({connectionString})
+    console.log({ connectionString })
     const channel = 'notifications_channel';
     //console.log({...env.tables.pg, ssl: { rejectUnauthorized: false,  ca: fs.readFileSync("./ca-certificate.crt") }})
     const pool = (() => {
@@ -154,7 +154,7 @@ const init = async () => {
 
             const onError = (err) => {
                 error('PG-LISTEN connection error:', err);
-                console.log({err})
+                console.log({ err })
                 pgListenerConnected = false;
             };
 
@@ -323,33 +323,12 @@ const init = async () => {
             });
             //console.log({certif: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString()})
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = createSubscriber({ connectionString, ssl: {    ca: `-----BEGIN CERTIFICATE-----
-MIIETTCCArWgAwIBAgIUY0i9vaj1db9n6IQCecTi2tKFRJwwDQYJKoZIhvcNAQEM
-BQAwQDE+MDwGA1UEAww1ZTUzYThjZGYtODQwOS00NmRlLWIyYmItMmRjMDE3NTUy
-YWY1IEdFTiAxIFByb2plY3QgQ0EwHhcNMjUwMjAyMTMyOTM5WhcNMzUwMTMxMTMy
-OTM5WjBAMT4wPAYDVQQDDDVlNTNhOGNkZi04NDA5LTQ2ZGUtYjJiYi0yZGMwMTc1
-NTJhZjUgR0VOIDEgUHJvamVjdCBDQTCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCC
-AYoCggGBAJneU+lAsh9SLm32NY/35i2HL0dLwLpP2lMI046Brv9YCNs4HPr/mN/P
-BkWEh7wEto82A0ToFxkFHOFyUH+Z1dJPPaZovHNZlpihvi+iBTW+1hB2WlYLreCI
-7nJBeqbcPSs1NWwCTQgZRhDJvvZGYUsJWCcaDYv9Vr1dZD8KbX+DMa0h3GU7AJcV
-j6nO7bpbmD6kBveBfwaMSh8wKHvMwPqBDivduCbvrZ+X/ZeveqRNeX5wNOXv2FC7
-kvZsIfUqbUIV3B+a6DEhvnsLRjlcp4T2ZrGQNUShIb1J/lK4+u1+qcJ7EMHyR7uD
-ykCJyBhn86cFHtrE6jcxPUlhDs4ODVchWAcME5xAVjoeCDKBlBeCci5t0Lg1mKrR
-b3hSpx3c+PhLFQOapRA3JT6T2LSRMsNJ1BUeiOUMTtsPkqEbQ9IazbUCnO1QvRHG
-Yeb9tzsyPpb7ScaeVF2OxrySG3pawFHNRT8UbVcVhOWYV3XcIr5XesA9osRAUiuS
-HoPw9UCyOQIDAQABoz8wPTAdBgNVHQ4EFgQUyZzwQ5ggnRr5NaXWK8RyZkBSE9cw
-DwYDVR0TBAgwBgEB/wIBADALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQEMBQADggGB
-ABCoQjSocBF2ruwVV8MFzGr2KZqrLMAlIn3JzrisdZ/78W1HKgT1NetWnK8PUjmF
-7hqBQTeavG1+UrwAHgdzTwj5wTP0fXcKj/JffV55zTP8oslMCMBTR3Wwh6+5aFO/
-VdncUSS6SPj+MxdCcCLmCrxw9fsWcO1etW6oyR+wIQzRj0+9kc7UOqOPXVLx6fvX
-KUu3OinBR5c3GNu9mPliYlQKHeoLw2R+q6hLXaUe9qzAgO9kBzKuYtv1nlfdRw7W
-pFwvEg8avn/iefhO2An8Jlwx4F9/s5bfK34GFbOeaPgnWAUt5y9pWtABY4NRXOnB
-26SXG4AYgdNKgm8LPDVi0SL/yUSpfSL5lNmaeQJcxShurhuHBKVoepRNQ1hM59Q7
-D9MhXpcoC//ttKjoqA9SP60u/GvQvkfqMzsZ5OJtd2pbv7W/7w3oHhWqAAmDvgMr
-jLtrsYsj5Akua8r4YB+l8yA3KFNhL9gLMGv9BHyXz2yv02Mavo08OvezrbvYF+k3
-Lg==
------END CERTIFICATE-----`,
-                rejectUnauthorized: false,}}) // poner en false solo si estás probando } });
+            const subscriber = createSubscriber({
+                connectionString, ssl: {
+                  
+                    rejectUnauthorized: false,
+                }
+            }) // poner en false solo si estás probando } });
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);

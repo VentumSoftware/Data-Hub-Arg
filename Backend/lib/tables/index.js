@@ -99,27 +99,27 @@ const init = async () => {
     const schemaHash = createHash(JSON.stringify(schema));
     //PRUEBA
 
-    const subscriber = createSubscriber({
-        connectionString,
-        ssl: { rejectUnauthorized: false }
-    });
+    // const subscriber = createSubscriber({
+    //     connectionString,
+    //     ssl: { rejectUnauthorized: false }
+    // });
 
-    async function testPGListen() {
-        subscriber.events.on("error", (err) => {
-            console.error("PG-LISTEN connection error:", err);
-        });
+    // async function testPGListen() {
+    //     subscriber.events.on("error", (err) => {
+    //         console.error("PG-LISTEN connection error:", err);
+    //     });
 
-        subscriber.events.on("test_channel", (msg) => {
-            console.log("Received notification:", msg);
-        });
+    //     subscriber.events.on("test_channel", (msg) => {
+    //         console.log("Received notification:", msg);
+    //     });
 
-        await subscriber.connect();
-        await subscriber.listenTo("test_channel");
+    //     await subscriber.connect();
+    //     await subscriber.listenTo("test_channel");
 
-        console.log("Listening to test_channel...");
-    }
+    //     console.log("Listening to test_channel...");
+    // }
 
-    testPGListen().catch(console.error);
+    // testPGListen().catch(console.error);
     //FIN PRUEBA
     const runQuery = async (query, params) => {
         let retries = 3;

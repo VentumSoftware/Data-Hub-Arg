@@ -319,9 +319,10 @@ const init = async () => {
 
                 notificationListeners.forEach(cb => { try { cb(payload) } catch (e) { error(e); } });
             });
-
+            console.log({path: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString()})
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, } });
+            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: {  ca: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString(),
+                rejectUnauthorized: true,}}) // poner en false solo si estás probando } });
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);

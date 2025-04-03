@@ -9,6 +9,7 @@ import {
   schema as tablesSchema, getCache, runQuery, getRows, getRow, getPaginatedRows,
   postRow, editRow, delRow
 } from '../lib/tables/index.js';
+
 const generateDateArrayUntilToday = (startDateStr, endDateStr = null) => {
   // Crear la fecha de inicio en UTC
   const startDate = new Date(Date.UTC(

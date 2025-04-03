@@ -11,8 +11,8 @@ import { info, warn, error } from '../log/index.js';
 export const { prefix: cdcPrefix, id: cdcId, action: cdcAction, editedAt: cdcEditedAt, editedBy: cdcEditedBy, lastChangesLimit: cdcLastChangesLimit } = env.tables.cdc;
 import path from 'path'
 const notificationListeners = [];
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 const createHash = (str) => crypto.createHash('sha256').update(str).digest('hex');
 
 const init = async () => {
@@ -321,7 +321,7 @@ const init = async () => {
 
                 notificationListeners.forEach(cb => { try { cb(payload) } catch (e) { error(e); } });
             });
-            console.log({certif: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString()})
+            //console.log({certif: fs.readFileSync(path.join(__dirname, './ca-certificate.crt')).toString()})
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
             const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: {    ca: `-----BEGIN CERTIFICATE-----
 MIIETTCCArWgAwIBAgIUY0i9vaj1db9n6IQCecTi2tKFRJwwDQYJKoZIhvcNAQEM

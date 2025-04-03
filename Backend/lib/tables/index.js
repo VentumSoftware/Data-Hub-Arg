@@ -14,7 +14,7 @@ const notificationListeners = [];
 const createHash = (str) => crypto.createHash('sha256').update(str).digest('hex');
 
 const init = async () => {
-    
+
     const start = Date.now();
     const { user, password, database, host, port } = env.ddbb.connection;
     const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}?sslmode=require`;
@@ -27,8 +27,8 @@ const init = async () => {
             ssl: isProduction ? { rejectUnauthorized: false } : false
         };
         const pool = new pg.Pool(poolConfig);
-        
-        console.log({env: env.app.env}, 'Mail Notification : ',{to: env.mailNotification.to, from: env.mailNotification.from})
+
+        console.log({ env: env.app.env }, 'Mail Notification : ', { to: env.mailNotification.to, from: env.mailNotification.from })
         pool.on('end', () => error('PostgreSQL Pool Disconected!'));
         pool.on('error', (err) => error('PostgreSQL Pool Error: ' + JSON.stringify(err)));
         // pool.on('connect', () => info('PostgreSQL Pool Connected'));
@@ -97,7 +97,30 @@ const init = async () => {
         return schema;
     })();
     const schemaHash = createHash(JSON.stringify(schema));
+    //PRUEBA
 
+    const subscriber = createSubscriber({
+        connectionString,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    async function testPGListen() {
+        subscriber.events.on("error", (err) => {
+            console.error("PG-LISTEN connection error:", err);
+        });
+
+        subscriber.events.on("test_channel", (msg) => {
+            console.log("Received notification:", msg);
+        });
+
+        await subscriber.connect();
+        await subscriber.listenTo("test_channel");
+
+        console.log("Listening to test_channel...");
+    }
+
+    testPGListen().catch(console.error);
+    //FIN PRUEBA
     const runQuery = async (query, params) => {
         let retries = 3;
         for (let i = 0; i < retries; i++) {
@@ -146,7 +169,7 @@ const init = async () => {
                         const { [cdcId]: cdc_id, [cdcAction]: rowAction, [cdcEditedAt]: created_at, ...r } = data;
                         const key = pks.reduce((p, k) => p + '-' + r[k], '').slice(1);
                         table.cdc.keys[key] ??= [];
-                        console.log(1,{table, action})
+                        console.log(1, { table, action })
                         switch (action) {
                             case 'INSERT':
                                 switch (rowAction) {
@@ -225,14 +248,14 @@ const init = async () => {
                                     //if( payload.table !== 'cdc_indexes' )console.log('INSERT',{row, tableName: payload.table,insertI})
                                     if (insertI > 0) {
                                         table.rows[insertI] = { ...table.rows[insertI], ...row };
-                                    } else {table.rows.push(row);}
+                                    } else { table.rows.push(row); }
                                     table.indexed = updateIndex({ indexed, pks }, row, action);
                                     break;
                                 case 'UPDATE':
                                     let updateI = table.rows.findIndex(x => pks.every(pk => x[pk] === row[pk]));
                                     if (updateI === -1) throw new Error(`UPDATE-CACHE-WITH-ROW Row not found: ${JSON.stringify(row)}`);
                                     console.log('UPDATE')
-                                    console.log('UPDATE',{row, pks, tableName: payload.table, updateI, oldRow: { ...table.rows[updateI]}})
+                                    console.log('UPDATE', { row, pks, tableName: payload.table, updateI, oldRow: { ...table.rows[updateI] } })
                                     table.rows[updateI] = { ...table.rows[updateI], ...row };
                                     table.indexed = updateIndex({ indexed, pks }, row, action);
                                     break;
@@ -286,7 +309,7 @@ const init = async () => {
                 const isCDC = tableName.toLowerCase().startsWith(cdcPrefix);
                 const table = cache[isCDC ? tableName.slice(cdcPrefix.length) : tableName];
                 const hasCDC = table.cdc != null;
-                 if (isCDC) {
+                if (isCDC) {
                     updateCacheWithCDC({ table, action, data });
                 } else if (!hasCDC) {
                     updateCacheWithRow({ table, action, data });
@@ -296,7 +319,7 @@ const init = async () => {
             });
 
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }):  createSubscriber({ connectionString, ssl: { rejectUnauthorized: false,}});
+            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, } });
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);
@@ -670,11 +693,11 @@ ${JSON.stringify(cdcRow, null, 4)}`
 
         return { rows: res.slice((pageNo) * pageSize, (pageNo + 1) * pageSize), totalCount: res.length };
     };
-  
+
     const postRow = async (tableName, row) => {
         const tableSchema = schema[tableName];
         if (tableSchema == null) throw new Error(`Invalid table name: ${tableName}`); // Prevents SQL Injection
-       
+
         const keys = Object.keys(row).filter(key => tableSchema.find(c => c.name === key));
         const values = keys.map(key => row[key]);
         const query = `INSERT INTO "${tableName}" ("${keys.join('", "')}") VALUES (${keys.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING *`;
@@ -710,7 +733,7 @@ ${JSON.stringify(cdcRow, null, 4)}`
             result = await runQuery(query, values);
         }
         else {
-             //TODO: Implement soft delete, delete fk's and cdc's
+            //TODO: Implement soft delete, delete fk's and cdc's
             const whereStatement = keys.map((key, idx) => `"${key}" = $${idx + 1}`).join(' AND ');
             const query = `UPDATE "${tableName}" SET "deleted" = true WHERE ${whereStatement} RETURNING *;`;
             result = await runQuery(query, values);

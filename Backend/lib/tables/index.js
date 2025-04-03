@@ -152,6 +152,7 @@ const init = async () => {
 
             const onError = (err) => {
                 error('PG-LISTEN connection error:', err);
+                console.log({err})
                 pgListenerConnected = false;
             };
 

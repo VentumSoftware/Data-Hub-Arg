@@ -14,16 +14,20 @@ const notificationListeners = [];
 const createHash = (str) => crypto.createHash('sha256').update(str).digest('hex');
 
 const init = async () => {
-
+    
     const start = Date.now();
-    const { user, password, database, host, port } = env.tables.pg;
-
+    const { user, password, database, host, port } = env.ddbb.connection;
     const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}`;
     const channel = 'notifications_channel';
     //console.log({...env.tables.pg, ssl: { rejectUnauthorized: false,  ca: fs.readFileSync("./ca-certificate.crt") }})
     const pool = (() => {
-        //const pool = env.app.env === 'development' ? new pg.Pool(env.tables.pg) : new pg.Pool({ ...env.tables.pg, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-        const pool = new pg.Pool(env.tables.pg);
+        const isProduction = env.app.env === 'production';
+        const poolConfig = {
+            ...env.ddbb.connection,
+            ssl: isProduction ? { rejectUnauthorized: false } : false
+        };
+        const pool = new pg.Pool(poolConfig);
+        
         console.log({env: env.app.env}, 'Mail Notification : ',{to: env.mailNotification.to, from: env.mailNotification.from})
         pool.on('end', () => error('PostgreSQL Pool Disconected!'));
         pool.on('error', (err) => error('PostgreSQL Pool Error: ' + JSON.stringify(err)));

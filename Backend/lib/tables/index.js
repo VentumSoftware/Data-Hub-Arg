@@ -19,7 +19,7 @@ const init = async () => {
 
     const start = Date.now();
     const { user, password, database, host, port } = env.ddbb.connection;
-    const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}?sslmode=require`;
+    const connectionString = `postgresql://${user}:${password}@${host}:${port}/${database}`;
     console.log({ connectionString })
     const channel = 'notifications_channel';
     //console.log({...env.tables.pg, ssl: { rejectUnauthorized: false,  ca: fs.readFileSync("./ca-certificate.crt") }})
@@ -339,6 +339,7 @@ const init = async () => {
                 pgListenerConnected = true; //Connect event is not launching
             } catch (error) {
                 console.error("PG LISTEN ERROR:", error);
+                console.log(error)
             }
             subscriber.notifications.on(channel, onNotification);
             process.on('exit', subscriber.close);

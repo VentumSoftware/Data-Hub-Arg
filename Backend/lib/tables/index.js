@@ -191,7 +191,7 @@ const init = async () => {
                     const tableName = tableNames[i];
                     const isCDC = tableName.toLowerCase().startsWith(cdcPrefix);
                     const table = cache[isCDC ? tableName.slice(cdcPrefix.length) : tableName];
-                    const hasCDC = table.cdc != null;
+                    const hasCDC = table?.cdc != null;
                     if (isCDC) {
                         updateTableWithCDC(tableName, table);
                     } else if (!hasCDC) {
@@ -296,7 +296,7 @@ const init = async () => {
             });
 
             //const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }) : createSubscriber({ connectionString, ssl: { rejectUnauthorized: false, ca: fs.readFileSync("./ca-certificate.crt") } });
-            const subscriber = createSubscriber(env.app.env === 'development' ?{ connectionString }: { connectionString, ssl: { rejectUnauthorized: false,}});
+            const subscriber = env.app.env === 'development' ? createSubscriber({ connectionString }):  createSubscriber({ connectionString, ssl: { rejectUnauthorized: false,}});
             subscriber.events.on('error', onError);
             subscriber.events.on('connect', onConnect);
             subscriber.events.on('reconnect', onReconnect);

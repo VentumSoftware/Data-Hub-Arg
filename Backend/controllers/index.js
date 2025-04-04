@@ -117,12 +117,28 @@ const updateIndexes = async () => {
     const dolarVentaId = currencies.find(x => x.name === 'Dolar Venta').id;
     const mepVentaId = currencies.find(x => x.name === 'Dolar MEP Venta').id;
     const oficialVentaId = currencies.find(x => x.name === 'Dolar Oficial Venta').id;
+    const dolarId = currencies.find(x => x.name === 'Dolar').id;
+    const mepId = currencies.find(x => x.name === 'Dolar MEP').id;
+    const oficialId = currencies.find(x => x.name === 'Dolar Oficial').id;
 
-
-    console.log(updatedIndexes[updatedIndexes.length - 1])
     for (let i = 0; i < updatedIndexes.length; i++) {
       const date = updatedIndexes[i]?.date?.split('T')[0];
+      //PROMEDIOS
+      if (updatedIndexes[i].informal && dbIndexes.find(x => x.currency === dolarId && x.date === date) == null) {
+        const valueInformal = (updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
+        await postRow(`indexes`, { date, currency: dolarId, value: valueInformal });
+      };
 
+      if (updatedIndexes[i].mep && dbIndexes.find(x => x.currency === mepId && x.date === date) == null) {
+        const valueMep = (updatedIndexes[i].mep.compra + updatedIndexes[i].mep.venta) / 2;
+        await postRow(`indexes`, { date, currency: mepId, value: valueMep });
+      };
+
+      if (updatedIndexes[i].oficial && dbIndexes.find(x => x.currency === oficialId && x.date === date) == null) {
+        const valueOficial = (updatedIndexes[i].oficial.compra + updatedIndexes[i].oficial.venta) / 2;
+        await postRow(`indexes`, { date, currency: oficialId, value: valueOficial });
+      }
+      //Compra-Venta
       if (updatedIndexes[i].informal?.compra && dbIndexes.find(x => x.currency === dolarCompraId && x.date === date) == null) {
         const valueInformalCompra = updatedIndexes[i].informal.compra//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
 
@@ -159,7 +175,7 @@ const updateIndexes = async () => {
         await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });
       }
 
-
+      //unitarios
       if (updatedIndexes[i].cac && dbIndexes.find(x => x.currency === cacId && x.date === date) == null) {
         const valueCAC = updatedIndexes[i].cac.general;
 
@@ -181,7 +197,10 @@ const updateIndexes = async () => {
       dolarCompraId,
       uvaId,
       mepCompraId,
-      oficialCompraId
+      oficialCompraId,
+      dolarId,
+      mepId,
+      oficialId
     }
   };
   console.log('Actualizando índices faltantes')
@@ -261,147 +280,7 @@ export default build([
     },
     action: async (req, res) => {
       try {
-        const getCurrencies = async () => {
-          const currencies = await getRows('currencies');
-          return currencies;
-        };
-        const getUpdatedIndexes = async () => {
-          const cacResponse = await axios.get('https://prestamos.ikiwi.net.ar/api/cacs');
-          const uvaResponse = await axios.get("https://prestamos.ikiwi.net.ar/api/v1/engine/uva/valores/");
-          const uviResponse = await axios.get("https://prestamos.ikiwi.net.ar/api/v1/engine/uvi/valores/");
-          const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
-            "headers": {
-              "accept": "application/json, text/plain, */*",
-              "auth-client": env.dolarito.auth,
-              "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
-              "sec-ch-ua-mobile": "?0",
-              "sec-ch-ua-platform": "\"Windows\"",
-              "Referer": "https://www.dolarito.ar/cotizaciones-historicas/informal",
-              "Referrer-Policy": "strict-origin-when-cross-origin"
-            },
-            "body": null,
-            "method": "GET"
-          })
-          if (!dolaritoResponse.ok) {
-            throw new Error(`HTTP Error ${dolaritoResponse.status}: ${dolaritoResponse.statusText}`);
-          };
-          const datosCAC = cacResponse.data;
-          const datosUVA = uvaResponse.data;
-          const datosUVI = uviResponse.data;
-          const datosDolarito = await dolaritoResponse.json();
-          const days = generateDateArrayUntilToday('2010-01-01');
-          return days.map((d, i) => {
-
-            const [year, month, day] = d.split('-');
-
-            const cacIndex = datosCAC.find(x => {
-              const [_year, _month, _day] = x.period.split('-');
-              return _month === month && _year === year;
-            });
-
-            const uvaIndex = datosUVA.find(x => {
-              const [_day, _month, _year] = x.fecha.split('-');
-              return _day === day && _month === month && _year === year;
-            });
-
-            const uviIndex = datosUVI.find(x => {
-              const [_day, _month, _year] = x.fecha.split('-');
-              return _day === day && _month === month && _year === year;
-            });
-
-            const dolaritoIndex = datosDolarito[`${day}-${month}-${year.substring(2, 4)}`];
-
-            return {
-              date: d,
-              ...dolaritoIndex,
-              cac: cacIndex,
-              uva: uvaIndex?.valor,
-              uvi: uviIndex?.valor
-            }
-          });
-        };
-        const updateIndexes = async (currencies, dbIndexes, updatedIndexes) => {
-          const cacId = currencies.find(x => x.name === 'CAC').id;
-          const uvaId = currencies.find(x => x.name === 'UVA').id;
-          const dolarCompraId = currencies.find(x => x.name === 'Dolar Compra').id;
-          const mepCompraId = currencies.find(x => x.name === 'Dolar MEP Compra').id;
-          const oficialCompraId = currencies.find(x => x.name === 'Dolar Oficial Compra').id;
-          const dolarVentaId = currencies.find(x => x.name === 'Dolar Venta').id;
-          const mepVentaId = currencies.find(x => x.name === 'Dolar MEP Venta').id;
-          const oficialVentaId = currencies.find(x => x.name === 'Dolar Oficial Venta').id;
-
-
-
-          for (let i = 0; i < updatedIndexes.length; i++) {
-            const date = updatedIndexes[i]?.date?.split('T')[0];
-
-            if (updatedIndexes[i].informal?.compra && dbIndexes.find(x => x.currency === dolarCompraId && x.date === date) == null) {
-              const valueInformalCompra = updatedIndexes[i].informal.compra//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
-
-              await postRow(`indexes`, { date, currency: dolarCompraId, value: valueInformalCompra });
-            };
-
-            if (updatedIndexes[i].informal?.venta && dbIndexes.find(x => x.currency === dolarVentaId && x.date === date) == null) {
-              const valueInformalVenta = updatedIndexes[i].informal.venta//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
-
-              await postRow(`indexes`, { date, currency: dolarVentaId, value: valueInformalVenta });
-            };
-
-
-            if (updatedIndexes[i].mep.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
-              const valueMepCompra = updatedIndexes[i].mep.compra
-
-              await postRow(`indexes`, { date, currency: mepCompraId, value: valueMepCompra });
-            };
-            if (updatedIndexes[i].mep.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
-              const valueMepVenta = updatedIndexes[i].mep.venta
-
-              await postRow(`indexes`, { date, currency: mepVentaId, value: valueMepVenta });
-            };
-
-
-            if (updatedIndexes[i].oficial.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
-              const valueOficialCompra = updatedIndexes[i].oficial.compra
-
-              await postRow(`indexes`, { date, currency: oficialCompraId, value: valueOficialCompra });
-            }
-            if (updatedIndexes[i].oficial.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
-              const valueOficialVenta = (updatedIndexes[i].oficial.venta)
-
-              await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });
-            }
-
-
-            if (updatedIndexes[i].cac && dbIndexes.find(x => x.currency === cacId && x.date === date) == null) {
-              const valueCAC = updatedIndexes[i].cac.general;
-
-              await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
-            };
-            if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {
-              const valueUVA = updatedIndexes[i].uva
-              await postRow(`indexes`, { date, currency: uvaId, value: valueUVA });
-            };
-          }
-
-          return {
-            updatedIndexes: updatedIndexes.length,
-            dbIndexes: dbIndexes.length,
-            dolarVentaId,
-            cacId,
-            mepVentaId,
-            oficialVentaId,
-            dolarCompraId,
-            uvaId,
-            mepCompraId,
-            oficialCompraId
-          };
-        };
-        console.log('Actualizando índices faltantes')
-        const currencies = await getCurrencies();
-        const dbIndexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)).toString() }));
-        const updatedIndexes = await getUpdatedIndexes();
-        //fs.writeFileSync('./indexes.json', JSON.stringify({ updatedIndexes, currencies, dbIndexes }, null, 2));
-        res.body = await updateIndexes(currencies, dbIndexes, updatedIndexes);
+       res.body = await updateIndexes();
       } catch (error) {
         console.error("Error en el endpoint:", error);
 
@@ -471,6 +350,64 @@ export default build([
             mepVenta: v.mepVenta || arr[i - 1]?.mepVenta || arr[i - 2]?.mepVenta || arr[i - 3]?.mepVenta || arr[i - 4]?.mepVenta,
             oficialVenta: v.oficialVenta || arr[i - 1]?.oficialVenta || arr[i - 2]?.oficialVenta || arr[i - 3]?.oficialVenta || arr[i - 4]?.oficialVenta,
           }));
+      } catch (error) {
+        console.error("Error en el endpoint:", error);
+
+        // Enviar email con el error
+        await mailer.sendMail({
+          from: process.env.MAIL_CUPONES_FROM,
+          to: process.env.MAIL_CUPONES_TO,
+          subject: "Error en la obtención de todos los índices",
+          text: `Se ha producido un error en el endpoint:\n\n${error.message}\n\nStack:\n${error.stack}`,
+        });
+
+        // Responder con error
+        res.status(500).json({ error: "Error en la actualización de índices" });
+      }
+    }
+
+  },
+  {
+    route: '/api/conversor',
+    description: 'Receives a value from a specified currency and delivers the conversion of that value into another currency.',
+    method: 'post',
+    validations: {
+      auth: null,
+      body: {
+        type: "object",
+        properties: {
+          from: {
+            type: "object",
+            properties: {
+              currecy: { type: "string" },
+              date: { type: "string" },
+            }
+          },
+          to: {
+            type: "object",
+            properties: {
+              currecy: { type: "string" },
+              date: { type: "string" },
+            }
+          },
+          amount: { type: "number" }
+        },
+        required: ["from", "to", "amount"],
+        additionalProperties: false
+      },
+    },
+    action: async (req, res) => {
+
+      try {
+        const { from, to, amount } = req.body
+        const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)).toString() }));
+        const currencies = await getRows('currencies');
+
+        const currencyFrom = currencies?.find(c => c.name === from.currency) || currencies?.filter(c => [`${from.currency} Venta`, `${from.currency} Compra`].includes(c.name));
+        const currencyTo = currencies?.find(c => c.name === to.currency) || currencies?.filter(c => [`${to.currency} Venta`, `${to.currency} Compra`].includes(c.name));
+        const indexFrom = indexes?.find()
+
+
       } catch (error) {
         console.error("Error en el endpoint:", error);
 

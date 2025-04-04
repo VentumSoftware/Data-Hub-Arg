@@ -136,24 +136,24 @@ const updateIndexes = async () => {
       };
 
 
-      if (updatedIndexes[i].mep.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
+      if (updatedIndexes[i].mep?.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
         const valueMepCompra = updatedIndexes[i].mep.compra
  
         await postRow(`indexes`, { date, currency: mepCompraId, value: valueMepCompra });
       };
-      if (updatedIndexes[i].mep.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
+      if (updatedIndexes[i].mep?.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
         const valueMepVenta = updatedIndexes[i].mep.venta
     
         await postRow(`indexes`, { date, currency: mepVentaId, value: valueMepVenta });
       };
 
 
-      if (updatedIndexes[i].oficial.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
+      if (updatedIndexes[i].oficial?.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
         const valueOficialCompra = updatedIndexes[i].oficial.compra
  
         await postRow(`indexes`, { date, currency: oficialCompraId, value: valueOficialCompra });
       }
-      if (updatedIndexes[i].oficial.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
+      if (updatedIndexes[i].oficial?.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
         const valueOficialVenta = (updatedIndexes[i].oficial.venta)
      
         await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });

@@ -419,10 +419,11 @@ export default build([
         const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyTo?.id);
         if (!indexToCurrencyFrom || !indexTo) {
           return res.status(400).json({ error: "Conversion rate not found for the provided date/currency" });
-        }
+        };
+        console.log({})
         const result = (indexToCurrencyFrom * amount) / indexTo;
 
-        return res.json({ result })
+        res.body = ({result, date: to.date, currency: to.currency})
 
 
       } catch (error) {

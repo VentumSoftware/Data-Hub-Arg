@@ -595,21 +595,24 @@ export default build([
             return {
               id: date,
               date: date,
-              dolarVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Venta')?.value,
               cac: indexesDate?.find(indexObj => indexObj.currency.name === 'CAC')?.value,
-              mepVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP Venta')?.value,
-              oficialVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Venta')?.value,
-              dolarCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Compra')?.value,
-              mepCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP Compra')?.value,
-              oficialCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Compra')?.value,
-              uva: indexesDate?.find(indexObj => indexObj.currency.name === 'UVA')?.value,
               cacMinus2,
+              uva: indexesDate?.find(indexObj => indexObj.currency.name === 'UVA')?.value,
+              dolarCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Compra')?.value,
+              dolarVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Venta')?.value,
+              mepCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP Compra')?.value,
+              mepVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP Venta')?.value,
+              oficialCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Compra')?.value,
+              oficialVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Venta')?.value,
             }
           }).map((v, i, arr) => ({
             ...v,
-            dolar: v.dolar || arr[i - 1]?.dolar || arr[i - 2]?.dolar || arr[i - 3]?.dolar || arr[i - 4]?.dolar,
-            mep: v.mep || arr[i - 1]?.mep || arr[i - 2]?.mep || arr[i - 3]?.mep || arr[i - 4]?.mep,
-            oficial: v.oficial || arr[i - 1]?.oficial || arr[i - 2]?.oficial || arr[i - 3]?.oficial || arr[i - 4]?.oficial,
+            dolarCompra: v.dolarCompra || arr[i - 1]?.dolarCompra || arr[i - 2]?.dolarCompra || arr[i - 3]?.dolarCompra || arr[i - 4]?.dolarCompra,
+            mepCompra: v.mepCompra || arr[i - 1]?.mepCompra || arr[i - 2]?.mepCompra || arr[i - 3]?.mepCompra || arr[i - 4]?.mepCompra,
+            oficialCompra: v.oficialCompra || arr[i - 1]?.oficialCompra || arr[i - 2]?.oficialCompra || arr[i - 3]?.oficialCompra || arr[i - 4]?.oficialCompra,
+            dolarVenta: v.dolarVenta || arr[i - 1]?.dolarVenta || arr[i - 2]?.dolarVenta || arr[i - 3]?.dolarVenta || arr[i - 4]?.dolarVenta,
+            mepVenta: v.mepVenta || arr[i - 1]?.mepVenta || arr[i - 2]?.mepVenta || arr[i - 3]?.mepVenta || arr[i - 4]?.mepVenta,
+            oficialVenta: v.oficialVenta || arr[i - 1]?.oficialVenta || arr[i - 2]?.oficialVenta || arr[i - 3]?.oficialVenta || arr[i - 4]?.oficialVenta,
           }));
       } catch (error) {
         console.error("Error en el endpoint:", error);

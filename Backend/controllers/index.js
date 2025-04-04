@@ -125,7 +125,7 @@ const updateIndexes = async () => {
 
       if (updatedIndexes[i].informal?.compra && dbIndexes.find(x => x.currency === dolarCompraId && x.date === date) == null) {
         const valueInformalCompra = updatedIndexes[i].informal.compra//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
- 
+
         await postRow(`indexes`, { date, currency: dolarCompraId, value: valueInformalCompra });
       };
 
@@ -138,24 +138,24 @@ const updateIndexes = async () => {
 
       if (updatedIndexes[i].mep?.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
         const valueMepCompra = updatedIndexes[i].mep.compra
- 
+
         await postRow(`indexes`, { date, currency: mepCompraId, value: valueMepCompra });
       };
       if (updatedIndexes[i].mep?.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
         const valueMepVenta = updatedIndexes[i].mep.venta
-    
+
         await postRow(`indexes`, { date, currency: mepVentaId, value: valueMepVenta });
       };
 
 
       if (updatedIndexes[i].oficial?.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
         const valueOficialCompra = updatedIndexes[i].oficial.compra
- 
+
         await postRow(`indexes`, { date, currency: oficialCompraId, value: valueOficialCompra });
       }
       if (updatedIndexes[i].oficial?.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
         const valueOficialVenta = (updatedIndexes[i].oficial.venta)
-     
+
         await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });
       }
 
@@ -229,153 +229,10 @@ export default build([
     },
     action: async (req, res) => {
       try {
-        const getCurrencies = async () => {
-          const currencies = await getRows('currencies');
-          return 'currencies';
-        };
-        const getUpdatedIndexes = async () => {
-          const cacResponse = await axios.get('https://prestamos.ikiwi.net.ar/api/cacs');
-          const uvaResponse = await axios.get("https://prestamos.ikiwi.net.ar/api/v1/engine/uva/valores/");
-          const uviResponse = await axios.get("https://prestamos.ikiwi.net.ar/api/v1/engine/uvi/valores/");
-          const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
-            "headers": {
-              "accept": "application/json, text/plain, */*",
-              "auth-client": env.dolarito.auth,
-              "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
-              "sec-ch-ua-mobile": "?0",
-              "sec-ch-ua-platform": "\"Windows\"",
-              "Referer": "https://www.dolarito.ar/cotizaciones-historicas/informal",
-              "Referrer-Policy": "strict-origin-when-cross-origin"
-            },
-            "body": null,
-            "method": "GET"
-          })
-          if (!dolaritoResponse.ok) {
-            throw new Error(`HTTP Error ${dolaritoResponse.status}: ${dolaritoResponse.statusText}`);
-          };
-          const datosCAC = cacResponse.data;
-          const datosUVA = uvaResponse.data;
-          const datosUVI = uviResponse.data;
-          const datosDolarito = await dolaritoResponse.json();
-          const days = generateDateArrayUntilToday('2010-01-01', '2025-01-01');
-          return days.map((d, i) => {
-
-            const [year, month, day] = d.split('-');
-
-            const cacIndex = datosCAC.find(x => {
-              const [_year, _month, _day] = x.period.split('-');
-              return _month === month && _year === year;
-            });
-
-            const uvaIndex = datosUVA.find(x => {
-              const [_day, _month, _year] = x.fecha.split('-');
-              return _day === day && _month === month && _year === year;
-            });
-
-            const uviIndex = datosUVI.find(x => {
-              const [_day, _month, _year] = x.fecha.split('-');
-              return _day === day && _month === month && _year === year;
-            });
-
-            const dolaritoIndex = datosDolarito[`${day}-${month}-${year.substring(2, 4)}`];
-
-            return {
-              date: d,
-              ...dolaritoIndex,
-              cac: cacIndex,
-              uva: uvaIndex?.valor,
-              uvi: uviIndex?.valor
-            }
-          });
-        };
-        const updateIndexes = async (currencies, dbIndexes, updatedIndexes) => {
-          const cacId = currencies.find(x => x.name === 'CAC').id;
-          const uvaId = currencies.find(x => x.name === 'UVA').id;
-          const dolarCompraId = currencies.find(x => x.name === 'Dolar Compra').id;
-          const mepCompraId = currencies.find(x => x.name === 'Dolar MEP Compra').id;
-          const oficialCompraId = currencies.find(x => x.name === 'Dolar Oficial Compra').id;
-          const dolarVentaId = currencies.find(x => x.name === 'Dolar Venta').id;
-          const mepVentaId = currencies.find(x => x.name === 'Dolar MEP Venta').id;
-          const oficialVentaId = currencies.find(x => x.name === 'Dolar Oficial Venta').id;
-
-
-
-          for (let i = 0; i < updatedIndexes.length; i++) {
-            const date = updatedIndexes[i]?.date?.split('T')[0];
-
-            if (updatedIndexes[i].informal?.compra && dbIndexes.find(x => x.currency === dolarCompraId && x.date === date) == null) {
-              const valueInformalCompra = updatedIndexes[i].informal.compra//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
-       
-              await postRow(`indexes`, { date, currency: dolarCompraId, value: valueInformalCompra });
-            };
-
-            if (updatedIndexes[i].informal?.venta && dbIndexes.find(x => x.currency === dolarVentaId && x.date === date) == null) {
-              const valueInformalVenta = updatedIndexes[i].informal.venta//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
- 
-              await postRow(`indexes`, { date, currency: dolarVentaId, value: valueInformalVenta });
-            };
-
-
-            if (updatedIndexes[i].mep.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
-              const valueMepCompra = updatedIndexes[i].mep.compra
-       
-              await postRow(`indexes`, { date, currency: mepCompraId, value: valueMepCompra });
-            };
-            if (updatedIndexes[i].mep.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
-              const valueMepVenta = updatedIndexes[i].mep.venta
-          
-              await postRow(`indexes`, { date, currency: mepVentaId, value: valueMepVenta });
-            };
-
-
-            if (updatedIndexes[i].oficial.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
-              const valueOficialCompra = updatedIndexes[i].oficial.compra
-       
-              await postRow(`indexes`, { date, currency: oficialCompraId, value: valueOficialCompra });
-            }
-            if (updatedIndexes[i].oficial.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
-              const valueOficialVenta = (updatedIndexes[i].oficial.venta)
-           
-              await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });
-            }
-
-
-            if (updatedIndexes[i].cac && dbIndexes.find(x => x.currency === cacId && x.date === date) == null) {
-              const valueCAC = updatedIndexes[i].cac.general;
- 
-              await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
-            };
-            if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {
-              const valueUVA = updatedIndexes[i].uva
-            
-              await postRow(`indexes`, { date, currency: uvaId, value: valueUVA });
-            };
-          }
-
-          return {
-            updatedIndexes: updatedIndexes.length,
-            dbIndexes: dbIndexes.length,
-            dolarVentaId,
-            cacId,
-            mepVentaId,
-            oficialVentaId,
-            dolarCompraId,
-            uvaId,
-            mepCompraId,
-            oficialCompraId
-          };
-        };
-        let currencies1 = await getRows('currencies');
-        let indexes = await getRows('indexes');
-        console.log({ currencies1, indexes })
         await runQuery(`DELETE FROM indexes;
         ALTER SEQUENCE indexes_id_seq RESTART WITH 1;`);
         console.log('Se han eliminado los índices de la tabla...')
-        const currencies = await getCurrencies();
-        const dbIndexes = []//(await getRows('indexes')).map(x => ({ ...x, date: x.date }));
-        const updatedIndexes = await getUpdatedIndexes();
-        //fs.writeFileSync('./indexes.json', JSON.stringify({ updatedIndexes, currencies, dbIndexes }, null, 2));
-        res.body = await updateIndexes(currencies, dbIndexes, updatedIndexes);
+        res.body = await updateIndexes();
       } catch (error) {
         console.error("Error en el endpoint:", error);
 
@@ -406,7 +263,7 @@ export default build([
       try {
         const getCurrencies = async () => {
           const currencies = await getRows('currencies');
-          return currencies ;
+          return currencies;
         };
         const getUpdatedIndexes = async () => {
           const cacResponse = await axios.get('https://prestamos.ikiwi.net.ar/api/cacs');
@@ -480,44 +337,44 @@ export default build([
 
             if (updatedIndexes[i].informal?.compra && dbIndexes.find(x => x.currency === dolarCompraId && x.date === date) == null) {
               const valueInformalCompra = updatedIndexes[i].informal.compra//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
-       
+
               await postRow(`indexes`, { date, currency: dolarCompraId, value: valueInformalCompra });
             };
 
             if (updatedIndexes[i].informal?.venta && dbIndexes.find(x => x.currency === dolarVentaId && x.date === date) == null) {
               const valueInformalVenta = updatedIndexes[i].informal.venta//(updatedIndexes[i].informal.compra + updatedIndexes[i].informal.venta) / 2;
- 
+
               await postRow(`indexes`, { date, currency: dolarVentaId, value: valueInformalVenta });
             };
 
 
             if (updatedIndexes[i].mep.compra && dbIndexes.find(x => x.currency === mepCompraId && x.date === date) == null) {
               const valueMepCompra = updatedIndexes[i].mep.compra
-       
+
               await postRow(`indexes`, { date, currency: mepCompraId, value: valueMepCompra });
             };
             if (updatedIndexes[i].mep.venta && dbIndexes.find(x => x.currency === mepVentaId && x.date === date) == null) {
               const valueMepVenta = updatedIndexes[i].mep.venta
-          
+
               await postRow(`indexes`, { date, currency: mepVentaId, value: valueMepVenta });
             };
 
 
             if (updatedIndexes[i].oficial.compra && dbIndexes.find(x => x.currency === oficialCompraId && x.date === date) == null) {
               const valueOficialCompra = updatedIndexes[i].oficial.compra
-       
+
               await postRow(`indexes`, { date, currency: oficialCompraId, value: valueOficialCompra });
             }
             if (updatedIndexes[i].oficial.venta && dbIndexes.find(x => x.currency === oficialVentaId && x.date === date) == null) {
               const valueOficialVenta = (updatedIndexes[i].oficial.venta)
-           
+
               await postRow(`indexes`, { date, currency: oficialVentaId, value: valueOficialVenta });
             }
 
 
             if (updatedIndexes[i].cac && dbIndexes.find(x => x.currency === cacId && x.date === date) == null) {
               const valueCAC = updatedIndexes[i].cac.general;
- 
+
               await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
             };
             if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {

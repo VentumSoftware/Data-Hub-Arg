@@ -102,4 +102,7 @@ export default {
         from: process.env.MAIL_NOTIFICATIONS_FROM || process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_USER,
         to: process.env.MAIL_NOTIFICATIONS_TO || process.env.MAIL_NOTIFICATIONS_TRANSPORT_AUTH_USER,
     },
+    dolarito: {
+        auth: process.env.DOLARITO_AUTH || ""
+    }
 }

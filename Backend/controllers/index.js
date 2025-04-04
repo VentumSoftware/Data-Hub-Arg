@@ -59,7 +59,7 @@ const updateIndexes = async () => {
     const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
       "headers": {
         "accept": "application/json, text/plain, */*",
-        "auth-client": "446432d32e85275b149bfa3ec40254ba",
+        "auth-client": env.dolarito.auth,
         "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "\"Windows\"",
@@ -240,7 +240,7 @@ export default build([
           const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
             "headers": {
               "accept": "application/json, text/plain, */*",
-              "auth-client": "0022200edebd6eaee37427532323d88b",
+              "auth-client": env.dolarito.auth,
               "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
               "sec-ch-ua-mobile": "?0",
               "sec-ch-ua-platform": "\"Windows\"",
@@ -413,7 +413,7 @@ export default build([
           const dolaritoResponse = await fetch("https://www.dolarito.ar/api/frontend/history", {
             "headers": {
               "accept": "application/json, text/plain, */*",
-              "auth-client": "0022200edebd6eaee37427532323d88b",
+              "auth-client": env.dolarito.auth,
               "sec-ch-ua": "\"Google Chrome\";v=\"123\", \"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"123\"",
               "sec-ch-ua-mobile": "?0",
               "sec-ch-ua-platform": "\"Windows\"",

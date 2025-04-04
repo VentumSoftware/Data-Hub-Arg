@@ -399,7 +399,7 @@ export default build([
           amount: { type: "number" },
           date: { type: "string" },
         },
-        required: ["from", "to", "amount"],
+        required: ["from", "to", "amount", "date"],
         additionalProperties: false
       },
     },
@@ -423,7 +423,7 @@ export default build([
         };
         const result = (indexToCurrencyFrom * amount) / indexTo;
 
-        res.body = ({result, date, currencycurrency})
+        res.body = ({result, date, currency: to.currency})
 
 
       } catch (error) {

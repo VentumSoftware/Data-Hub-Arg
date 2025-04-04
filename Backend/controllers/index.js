@@ -415,12 +415,15 @@ export default build([
         if (!currencyFrom || !currencyTo) {
           return res.status(400).json({ error: "Invalid currency provided" });
         }
-        const indexToCurrencyFrom = currencyFrom?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyFrom?.id);
-        const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyTo?.id);
+        const indexToCurrencyFrom = currencyFrom?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyFrom?.id)?.value;
+        const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyTo?.id)?.value;
         if (!indexToCurrencyFrom || !indexTo) {
           return res.status(400).json({ error: "Conversion rate not found for the provided date/currency" });
         };
-        console.log({})
+        console.log({currencyFrom ,
+          currencyTo ,
+          indexToCurrencyFrom ,
+          indexTo, })
         const result = (indexToCurrencyFrom * amount) / indexTo;
 
         res.body = ({result, date: to.date, currency: to.currency})

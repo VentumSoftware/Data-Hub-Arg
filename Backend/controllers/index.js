@@ -119,7 +119,7 @@ const updateIndexes = async () => {
     const oficialVentaId = currencies.find(x => x.name === 'Dolar Oficial Venta').id;
 
 
-
+    console.log(updatedIndexes[updatedIndexes.length - 1])
     for (let i = 0; i < updatedIndexes.length; i++) {
       const date = updatedIndexes[i]?.date?.split('T')[0];
 
@@ -166,8 +166,7 @@ const updateIndexes = async () => {
         await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
       };
       if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {
-        const valueUVA = updatedIndexes[i].uva.general || 0;
-        console.log({uva:updatedIndexes[i].uva})
+        const valueUVA = updatedIndexes[i].uva
         await postRow(`indexes`, { date, currency: uvaId, value: valueUVA });
       };
     }
@@ -345,7 +344,7 @@ export default build([
               await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
             };
             if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {
-              const valueUVA = updatedIndexes[i].uva.general || 0;
+              const valueUVA = updatedIndexes[i].uva
             
               await postRow(`indexes`, { date, currency: uvaId, value: valueUVA });
             };
@@ -518,7 +517,7 @@ export default build([
               await postRow(`indexes`, { date, currency: cacId, value: valueCAC });
             };
             if (updatedIndexes[i].uva && dbIndexes.find(x => x.currency === uvaId && x.date === date) == null) {
-              const valueUVA = updatedIndexes[i].uva.general || 0;
+              const valueUVA = updatedIndexes[i].uva
               await postRow(`indexes`, { date, currency: uvaId, value: valueUVA });
             };
           }

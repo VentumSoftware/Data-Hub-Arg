@@ -250,7 +250,9 @@ export default build([
             "body": null,
             "method": "GET"
           })
-
+          if (!dolaritoResponse.ok) {
+            throw new Error(`HTTP Error ${dolaritoResponse.status}: ${dolaritoResponse.statusText}`);
+          };
           const datosCAC = cacResponse.data;
           const datosUVA = uvaResponse.data;
           const datosUVI = uviResponse.data;
@@ -423,7 +425,9 @@ export default build([
             "body": null,
             "method": "GET"
           })
-
+          if (!dolaritoResponse.ok) {
+            throw new Error(`HTTP Error ${dolaritoResponse.status}: ${dolaritoResponse.statusText}`);
+          };
           const datosCAC = cacResponse.data;
           const datosUVA = uvaResponse.data;
           const datosUVI = uviResponse.data;

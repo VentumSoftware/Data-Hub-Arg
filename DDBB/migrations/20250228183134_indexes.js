@@ -27,9 +27,9 @@ export const up = function (knex) {
                     { "id": 7, "name": "Dolar MEP Compra", "symbol": "MEP" },
                     { "id": 8, "name": 'Dolar Oficial Venta', "symbol": 'OFICIAL' },
                     { "id": 9, "name": 'Dolar Oficial Compra', "symbol": 'OFICIAL' },
-                    { "id": 4, "name": "Dolar", "symbol": "U$" },
-                    { "id": 6, "name": "Dolar MEP", "symbol": "MEP" },
-                    { "id": 9, "name": 'Dolar Oficial', "symbol": 'OFICIAL' },
+                    { "id": 10, "name": "Dolar", "symbol": "U$" },
+                    { "id": 11, "name": "Dolar MEP", "symbol": "MEP" },
+                    { "id": 12, "name": 'Dolar Oficial', "symbol": 'OFICIAL' },
                 ]);
             });
         })

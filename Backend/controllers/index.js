@@ -280,7 +280,7 @@ export default build([
     },
     action: async (req, res) => {
       try {
-       res.body = await updateIndexes();
+        res.body = await updateIndexes();
       } catch (error) {
         console.error("Error en el endpoint:", error);
 
@@ -379,14 +379,14 @@ export default build([
           from: {
             type: "object",
             properties: {
-              currecy: { type: "string" },
-              date: { type: "string" },
+              currency: { type: "string" },
+              //date: { type: "string" },
             }
           },
           to: {
             type: "object",
             properties: {
-              currecy: { type: "string" },
+              currency: { type: "string" },
               date: { type: "string" },
             }
           },
@@ -400,12 +400,23 @@ export default build([
 
       try {
         const { from, to, amount } = req.body
-        const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)).toString() }));
+        const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)) }));
         const currencies = await getRows('currencies');
 
-        const currencyFrom = currencies?.find(c => c.name === from.currency) || currencies?.filter(c => [`${from.currency} Venta`, `${from.currency} Compra`].includes(c.name));
-        const currencyTo = currencies?.find(c => c.name === to.currency) || currencies?.filter(c => [`${to.currency} Venta`, `${to.currency} Compra`].includes(c.name));
-        const indexFrom = indexes?.find()
+        const currencyFrom = currencies?.find(c => c.name === from.currency);
+        const currencyTo = currencies?.find(c => c.name === to.currency);
+
+        if (!currencyFrom || !currencyTo) {
+          return res.status(400).json({ error: "Invalid currency provided" });
+        }
+        const indexToCurrencyFrom = currencyFrom?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyFrom?.id);
+        const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyTo?.id);
+        if (!indexToCurrencyFrom || !indexTo) {
+          return res.status(400).json({ error: "Conversion rate not found for the provided date/currency" });
+        }
+        const result = (indexToCurrencyFrom * amount) / indexTo;
+
+        return res.json({ result })
 
 
       } catch (error) {

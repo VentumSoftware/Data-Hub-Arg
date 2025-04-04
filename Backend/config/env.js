@@ -84,7 +84,8 @@ export default {
             }
         },
         auth: {
-            ips: process.env.MIDDLEWARE_AUTH_IPS || ['::1','127.0.0.1']
+            ips: process.env.MIDDLEWARE_AUTH_IPS || ['::1','127.0.0.1'],
+            token: process.env.MIDDLEWARE_AUTH_TOKEN || '',
         }
     },
     mailNotification: {

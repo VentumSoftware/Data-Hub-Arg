@@ -25,7 +25,7 @@ const limitedArrStr = (arr, initialN = 10, endN = 0) => {
 };
 
 export const before = (app) => {
-    const allowedIps = env.middleware.auth.ips; // Cargar las IPs permitidas
+    const allowedToken = env.middleware.auth.token
     const addMiddleware = (app) => {
 
         app.use(cors({ origin: true, credentials: true }));
@@ -48,13 +48,17 @@ export const before = (app) => {
         //app.use(upload.any());
         return app;
     };
-    const filterByIP = (req, res, next) => {
-        const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        console.log({clientIp})
-        if (!allowedIps.includes(clientIp)) {
-            return res.status(403).json({ error: 'Access denied: IP not allowed' });
+    const authenticateToken = (req, res, next) => {
+        const authHeader = req.headers.authorization; // Obtener el header de autorización
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ error: 'Access denied: Missing or invalid token' });
         }
-        
+
+        const token = authHeader.split(" ")[1]; // Extraer el token del header
+        if (token !== allowedToken) {
+            return res.status(403).json({ error: 'Access denied: Invalid token' });
+        }
+
         next();
     };
     const addUtils = (req, res, next) => {
@@ -70,7 +74,7 @@ export const before = (app) => {
     };
 
     app = addMiddleware(app);
-    app.use(filterByIP);
+    app.use(authenticateToken); // Aplica la autenticación por token
     app.use(addUtils);
     //app.use(addReqData);
 

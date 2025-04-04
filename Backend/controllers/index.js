@@ -340,6 +340,9 @@ export default build([
               mepVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP Venta')?.value,
               oficialCompra: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Compra')?.value,
               oficialVenta: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial Venta')?.value,
+              dolar: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar')?.value,
+              mep: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar MEP')?.value,
+              oficial: indexesDate?.find(indexObj => indexObj.currency.name === 'Dolar Oficial')?.value,
             }
           }).map((v, i, arr) => ({
             ...v,
@@ -349,6 +352,9 @@ export default build([
             dolarVenta: v.dolarVenta || arr[i - 1]?.dolarVenta || arr[i - 2]?.dolarVenta || arr[i - 3]?.dolarVenta || arr[i - 4]?.dolarVenta,
             mepVenta: v.mepVenta || arr[i - 1]?.mepVenta || arr[i - 2]?.mepVenta || arr[i - 3]?.mepVenta || arr[i - 4]?.mepVenta,
             oficialVenta: v.oficialVenta || arr[i - 1]?.oficialVenta || arr[i - 2]?.oficialVenta || arr[i - 3]?.oficialVenta || arr[i - 4]?.oficialVenta,
+            dolar: v.dolar || arr[i - 1]?.dolar || arr[i - 2]?.dolar || arr[i - 3]?.dolar || arr[i - 4]?.dolar,
+            mep: v.mep || arr[i - 1]?.mep || arr[i - 2]?.mep || arr[i - 3]?.mep || arr[i - 4]?.mep,
+            oficial: v.oficial || arr[i - 1]?.oficial || arr[i - 2]?.oficial || arr[i - 3]?.oficial || arr[i - 4]?.oficial,
           }));
       } catch (error) {
         console.error("Error en el endpoint:", error);

@@ -393,10 +393,11 @@ export default build([
             type: "object",
             properties: {
               currency: { type: "string" },
-              date: { type: "string" },
+              //date: { type: "string" },
             }
           },
-          amount: { type: "number" }
+          amount: { type: "number" },
+          date: { type: "string" },
         },
         required: ["from", "to", "amount"],
         additionalProperties: false
@@ -405,7 +406,7 @@ export default build([
     action: async (req, res) => {
 
       try {
-        const { from, to, amount } = req.body
+        const { from, to, amount, date } = req.body
         const indexes = (await getRows('indexes')).map(x => ({ ...x, date: (x.date.toISOString().slice(0, 10)) }));
         const currencies = await getRows('currencies');
 
@@ -415,10 +416,10 @@ export default build([
         if (!currencyFrom || !currencyTo) {
           return res.status(400).json({ error: "Invalid currency provided" });
         }
-        const indexToCurrencyFrom = currencyFrom?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyFrom?.id)?.value;
-        const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === to.date && i.currency === currencyTo?.id)?.value;
+        const indexToCurrencyFrom = currencyFrom?.name === 'Peso' ? 1 : indexes?.find(i => i.date === date && i.currency === currencyFrom?.id)?.value;
+        const indexTo = currencyTo?.name === 'Peso' ? 1 : indexes?.find(i => i.date === date && i.currency === currencyTo?.id)?.value;
         if (!indexToCurrencyFrom || !indexTo) {
-          return res.status(400).json({ error: "Conversion rate not found for the provided date/currency" });
+          return res.status(400).json({ error: `Conversion rate not found for the provided ${date}/${currencyTo?.name}` });
         };
         console.log({currencyFrom ,
           currencyTo ,
@@ -426,7 +427,7 @@ export default build([
           indexTo, })
         const result = (indexToCurrencyFrom * amount) / indexTo;
 
-        res.body = ({result, date: to.date, currency: to.currency})
+        res.body = ({result, date, currencycurrency})
 
 
       } catch (error) {

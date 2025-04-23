@@ -1,0 +1,161 @@
+{
+  "id": "19e457de-f350-4d6b-ae86-180d6a69d2b5",
+  "prevId": "3d70ff22-a6e9-48ad-8933-02bc2f8644bd",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.currencies": {
+      "name": "currencies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "currencies_name_unique": {
+          "name": "currencies_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.indexes": {
+      "name": "indexes",
+      "schema": "",
+      "columns": {
+        "date": {
+          "name": "date",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "relationsCurrencies": {
+          "name": "relationsCurrencies",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "indexes_relationsCurrencies_relationsCurrencies_id_fk": {
+          "name": "indexes_relationsCurrencies_relationsCurrencies_id_fk",
+          "tableFrom": "indexes",
+          "tableTo": "relationsCurrencies",
+          "columnsFrom": [
+            "relationsCurrencies"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.relationsCurrencies": {
+      "name": "relationsCurrencies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "divisorId": {
+          "name": "divisorId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dividendoId": {
+          "name": "dividendoId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "relationsCurrencies_divisorId_currencies_id_fk": {
+          "name": "relationsCurrencies_divisorId_currencies_id_fk",
+          "tableFrom": "relationsCurrencies",
+          "tableTo": "currencies",
+          "columnsFrom": [
+            "divisorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "relationsCurrencies_dividendoId_currencies_id_fk": {
+          "name": "relationsCurrencies_dividendoId_currencies_id_fk",
+          "tableFrom": "relationsCurrencies",
+          "tableTo": "currencies",
+          "columnsFrom": [
+            "dividendoId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

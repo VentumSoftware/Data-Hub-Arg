@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1744052219608,
+      "tag": "0000_exotic_sentry",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1744648431368,
+      "tag": "0001_serious_garia",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1744650435536,
+      "tag": "0002_ancient_zeigeist",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1744826671042,
+      "tag": "0003_right_ronan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1745256796612,
+      "tag": "0004_mixed_speed_demon",
+      "breakpoints": true
+    }
+  ]
+}

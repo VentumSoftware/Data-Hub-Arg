@@ -1,0 +1,610 @@
+{
+  "posiblePaths": {
+    "1": [
+      [
+        {
+          "id": 1,
+          "divisorId": 1,
+          "dividendoId": 1
+        }
+      ]
+    ],
+    "2": [
+      [
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "3": [
+      [
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "4": [
+      [
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "5": [
+      [
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "6": [
+      [
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "7": [
+      [
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "8": [
+      [
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "9": [
+      [
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "10": [
+      [
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        }
+      ]
+    ],
+    "11": [
+      [
+        {
+          "id": 11,
+          "divisorId": 3,
+          "dividendoId": 11
+        },
+        {
+          "id": 2,
+          "divisorId": 2,
+          "dividendoId": 3
+        },
+        {
+          "id": 3,
+          "divisorId": 3,
+          "dividendoId": 2
+        },
+        {
+          "id": 4,
+          "divisorId": 3,
+          "dividendoId": 4
+        },
+        {
+          "id": 5,
+          "divisorId": 3,
+          "dividendoId": 5
+        },
+        {
+          "id": 6,
+          "divisorId": 3,
+          "dividendoId": 6
+        },
+        {
+          "id": 7,
+          "divisorId": 3,
+          "dividendoId": 7
+        },
+        {
+          "id": 8,
+          "divisorId": 3,
+          "dividendoId": 8
+        },
+        {
+          "id": 9,
+          "divisorId": 3,
+          "dividendoId": 9
+        },
+        {
+          "id": 10,
+          "divisorId": 3,
+          "dividendoId": 10
+        }
+      ]
+    ]
+  },
+  "relationsCurrencyData": [
+    {
+      "id": 1,
+      "divisorId": 1,
+      "dividendoId": 1
+    },
+    {
+      "id": 2,
+      "divisorId": 2,
+      "dividendoId": 3
+    },
+    {
+      "id": 3,
+      "divisorId": 3,
+      "dividendoId": 2
+    },
+    {
+      "id": 4,
+      "divisorId": 3,
+      "dividendoId": 4
+    },
+    {
+      "id": 5,
+      "divisorId": 3,
+      "dividendoId": 5
+    },
+    {
+      "id": 6,
+      "divisorId": 3,
+      "dividendoId": 6
+    },
+    {
+      "id": 7,
+      "divisorId": 3,
+      "dividendoId": 7
+    },
+    {
+      "id": 8,
+      "divisorId": 3,
+      "dividendoId": 8
+    },
+    {
+      "id": 9,
+      "divisorId": 3,
+      "dividendoId": 9
+    },
+    {
+      "id": 10,
+      "divisorId": 3,
+      "dividendoId": 10
+    },
+    {
+      "id": 11,
+      "divisorId": 3,
+      "dividendoId": 11
+    }
+  ]
+}

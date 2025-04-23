@@ -1,0 +1,2 @@
+ALTER TABLE "currencies" ADD COLUMN "currency" integer;--> statement-breakpoint
+ALTER TABLE "currencies" ADD CONSTRAINT "currencies_currency_currencies_id_fk" FOREIGN KEY ("currency") REFERENCES "public"."currencies"("id") ON DELETE cascade ON UPDATE no action;

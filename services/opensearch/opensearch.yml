@@ -1,0 +1,37 @@
+cluster.name: "app-logs"
+node.name: "app-node-1"
+
+# Path settings
+path.data: /usr/share/opensearch/data
+path.logs: /usr/share/opensearch/logs
+
+# Network settings
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# Discovery settings for single-node cluster
+discovery.type: single-node
+
+# Memory settings
+bootstrap.memory_lock: true
+
+# Security (disabled for development)
+plugins.security.disabled: true
+
+# Monitoring
+cluster.routing.allocation.disk.threshold_enabled: false
+
+# Index settings for log retention
+action.auto_create_index: "+logs-*,+metrics-*,+errors-*,.opendistro*,.opensearch*"
+
+# Performance settings
+indices.fielddata.cache.size: 40%
+indices.requests.cache.size: 2%
+indices.queries.cache.size: 10%
+
+# Logging settings
+logger.org.opensearch.deprecation: warn
+
+# Compatibility with Elasticsearch APIs
+compatibility.override_main_response_version: true

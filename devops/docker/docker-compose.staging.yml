@@ -1,0 +1,83 @@
+# Staging environment with external managed database
+services:
+  # Main API Service
+  api:
+    build:
+      context: ../../packages/api
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:-app}-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-staging}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
+      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL}
+      SFTP_HOST: sftp
+      SFTP_PORT: 22
+      SFTP_USERNAME: ${SFTP_USERNAME:-app_user}
+      SFTP_PASSWORD: ${SFTP_PASSWORD:-app_sftp_password}
+      FE_URL: ${FE_URL:-http://localhost:3001}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    depends_on:
+      - sftp
+    networks:
+      - app-network
+    restart: unless-stopped
+    volumes:
+      - ../../packages/api/uploads:/app/uploads
+
+  # Web Application (production build)
+  web:
+    build:
+      context: ../../packages/web
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:-app}-web
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-/api}
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME:-app}-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ../../services/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
+      - ../../services/nginx/ssl:/etc/nginx/ssl
+      - ../../packages/web/dist:/usr/share/nginx/html
+    depends_on:
+      - api
+      - web
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # SFTP Server
+  sftp:
+    image: atmoz/sftp:latest
+    container_name: ${APP_NAME:-app}-sftp
+    environment:
+      SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
+    ports:
+      - "${SFTP_PORT:-2222}:22"
+    volumes:
+      - sftp_data:/home/${SFTP_USERNAME:-app_user}/upload
+      - ../../services/sftp/users.conf:/etc/sftp/users.conf:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sftp_data:
+    driver: local

@@ -1,0 +1,231 @@
+name: ${APP_NAME:-app}
+
+services:
+  # Main PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${APP_NAME:-app}-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_main}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../init-db:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Main API Service
+  api:
+    build:
+      context: ../..
+      dockerfile: ./packages/api/Dockerfile
+    container_name: ${APP_NAME:-app}-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://app_user:app_password@postgres:5432/app_main}
+      # Individual database connection variables for scripts that need them
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-app_main}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      # Application configuration
+      APP_NAME: ${APP_NAME:-app}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-here}
+      GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
+      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL:-http://localhost:3000/api/access/google/redirect}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL}
+      # System user configuration
+      SYSTEM_USER_EMAIL: ${SYSTEM_USER_EMAIL:-system@template.com}
+      SYSTEM_USER_ALIAS: ${SYSTEM_USER_ALIAS:-System}
+      SYSTEM_USER_FIRST_NAME: ${SYSTEM_USER_FIRST_NAME:-System}
+      SYSTEM_USER_LAST_NAME: ${SYSTEM_USER_LAST_NAME:-User}
+      # SFTP configuration
+      SFTP_HOST: sftp
+      SFTP_PORT: 22
+      SFTP_USERNAME: ${SFTP_USERNAME:-app_user}
+      SFTP_PASSWORD: ${SFTP_PASSWORD:-app_sftp_password}
+      FE_URL: ${FE_URL:-http://localhost:5173}
+      # Logging configuration
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_REQUESTS: ${LOG_REQUESTS:-false}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      - postgres
+      - sftp
+      - opensearch
+    networks:
+      - app-network
+    restart: unless-stopped
+    volumes:
+      - ../../packages/api/uploads:/app/uploads
+
+  # Web Application
+  web:
+    build:
+      context: ../../packages/web
+      dockerfile: Dockerfile.dev
+    container_name: ${APP_NAME:-app}-web
+    environment:
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=5173
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ../../packages/web:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME:-app}-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ../../services/nginx/nginx.dev.conf:/etc/nginx/nginx.conf
+      - ../../services/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - api
+      - web
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Message Publisher Service
+  message-publisher:
+    build:
+      context: ../..
+      dockerfile: ./services/message-publisher/Dockerfile
+    container_name: ${APP_NAME:-app}-message-publisher
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://app_user:app_password@postgres:5432/app_main}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
+      LOG_LEVEL: ${MESSAGE_PUBLISHER_LOG_LEVEL:-info}
+      CDC_OUTBOX_CONFIG_PATH: /app/config/cdc-outbox.yml
+    volumes:
+      - ../../packages/api/drizzle/config/cdc-outbox.yml:/app/config/cdc-outbox.yml:ro
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ${APP_NAME:-app}-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  # SFTP Server
+  sftp:
+    image: atmoz/sftp:latest
+    container_name: ${APP_NAME:-app}-sftp
+    environment:
+      SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
+    ports:
+      - "${SFTP_PORT:-2222}:22"
+    volumes:
+      - sftp_data:/home/${SFTP_USERNAME:-app_user}/upload
+      - ../../services/sftp/users.conf:/etc/sftp/users.conf:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # OpenSearch for logging and monitoring
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: ${APP_NAME:-app}-opensearch
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+      - cluster.name=app-logs
+      - node.name=app-node-1
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      - ../../services/opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+      - "${OPENSEARCH_TRANSPORT_PORT:-9300}:9300"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # OpenSearch Dashboards for log visualization
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.1
+    container_name: ${APP_NAME:-app}-opensearch-dashboards
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      SERVER_NAME: ${APP_NAME:-app}-dashboards
+      SERVER_HOST: "0.0.0.0"
+      LOGGING_ROOT_LEVEL: warn
+    volumes:
+      - ../../services/opensearch-dashboards/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+    ports:
+      - "${OPENSEARCH_DASHBOARDS_PORT:-5601}:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  sftp_data:
+    driver: local
+  opensearch_data:
+    driver: local

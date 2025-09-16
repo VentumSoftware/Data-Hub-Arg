@@ -1,0 +1,37 @@
+{
+  "version": "2.11.1",
+  "objects": [
+    {
+      "id": "logs-*",
+      "type": "index-pattern",
+      "attributes": {
+        "title": "logs-*",
+        "timeFieldName": "@timestamp",
+        "fields": "[{\"name\":\"@timestamp\",\"type\":\"date\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"level\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"message\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":false},{\"name\":\"service\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"environment\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"appName\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"userId\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"operation\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"component\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"correlationId\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"duration\",\"type\":\"number\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"statusCode\",\"type\":\"number\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"method\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"url\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true}]"
+      }
+    },
+    {
+      "id": "metrics-*",
+      "type": "index-pattern", 
+      "attributes": {
+        "title": "metrics-*",
+        "timeFieldName": "@timestamp",
+        "fields": "[{\"name\":\"@timestamp\",\"type\":\"date\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"metric\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"value\",\"type\":\"number\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"service\",\"type\":\"string\",\"searchable\":true,\"aggregatable\":true},{\"name\":\"labels\",\"type\":\"object\",\"searchable\":false,\"aggregatable\":false}]"
+      }
+    },
+    {
+      "id": "application-overview",
+      "type": "dashboard",
+      "attributes": {
+        "title": "Application Overview Dashboard",
+        "description": "Main application monitoring dashboard showing logs, metrics, and health",
+        "panelsJSON": "[]",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"match_all\":{}},\"filter\":[]}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+# Enhanced roles that demonstrate scoped permissions and ABAC integration
+# These complement the existing roles.yml with modern permission patterns
+
+roles:
+  # Company Administrator - scoped to specific company
+  - name: company-admin
+    label: Company Administrator
+    group: company-management
+    description: Administrative access scoped to a specific company
+    permissions:
+      # Users within company scope
+      - users:read
+      - users:create
+      - users:update
+      - users:activity:read
+      # Company data (will inherit company scope from role assignment)
+      - companies:read
+      - companies:update
+      - projects:create
+      - projects:read
+      - projects:update
+      - projects:delete
+      # Unit management within company
+      - units:create
+      - units:read
+      - units:update
+      - units:delete
+      # Ownership within company
+      - ownership:create
+      - ownership:read
+      - ownership:update
+      - ownership:delete
+      # Company-scoped permissions
+      - access:assign-roles  # Can assign roles within company
+      - user-groups:manage-members  # Can manage groups within company
+    
+  # Project Manager - scoped to specific projects
+  - name: project-manager
+    label: Project Manager
+    group: project-management
+    description: Management access scoped to specific projects
+    permissions:
+      # Project management (will inherit project scope)
+      - projects:read
+      - projects:update
+      - units:create
+      - units:read
+      - units:update
+      - ownership:read
+      - ownership:update
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:moderate
+      # Team management
+      - user-groups:read
+      - user-groups:manage-members
+    
+  # Department Head - combines role + attribute requirements  
+  - name: department-head
+    label: Department Head
+    group: management
+    description: Departmental leadership with attribute-based restrictions
+    permissions:
+      # User management within department (attribute-restricted)
+      - users:read
+      - users:update
+      - users:activity:read
+      # Departmental operations
+      - projects:create
+      - projects:read
+      - projects:update
+      - comments:moderate
+      - user-groups:read
+      - user-groups:update
+      - user-groups:manage-members
+    
+  # Data Steward - attribute-based access to different data types
+  - name: data-steward
+    label: Data Steward
+    group: data-management
+    description: Manages data access with attribute-based restrictions
+    permissions:
+      # Basic data access
+      - companies:read
+      - projects:read
+      - units:read
+      - ownership:read
+      - payments:read
+      # Conditional data access (will require attributes)
+      - data.sensitive.read  # Requires high clearance
+      - data.financial.read  # Requires financial dept or clearance
+      - data.personal.read   # Requires HR dept or clearance
+      # Analytics and reporting
+      - reports:generate
+      - exports:create
+    
+  # Operations Specialist - mixed global and scoped permissions
+  - name: ops-specialist
+    label: Operations Specialist
+    group: operations
+    description: Operations access with mixed global and scoped permissions
+    permissions:
+      # Global operations permissions
+      - monitoring.access
+      - system:status:read
+      - indexes:convert
+      - indexes:currencies:read
+      - indexes:relations:read
+      # Scoped deployment permissions (will be project-scoped)
+      - deployment.execute
+      # File operations
+      - fs:read:node
+      - fs:list:directory
+      - fs:upload:file
+      - fs:create:directory
+    
+  # Customer Support - attribute-filtered user access
+  - name: customer-support
+    label: Customer Support
+    group: support
+    description: Customer support with filtered access to user data
+    permissions:
+      # Limited user read access (attribute-filtered)
+      - users:read
+      - users:activity:read
+      # Customer-facing data
+      - companies:read
+      - projects:read
+      - units:read
+      - ownership:read
+      - payments:read
+      # Support operations
+      - comments:create
+      - comments:read
+      - comments:update
+      - sessions:read
+      # Communication
+      - mailing:create
+      - mailing:read
+    
+  # Security Analyst - high-clearance attribute requirements
+  - name: security-analyst
+    label: Security Analyst
+    group: security
+    description: Security analysis role requiring high clearance attributes
+    permissions:
+      # Security-specific permissions
+      - admin.system.analysis
+      - permissions.debug
+      - audit.read
+      - sessions:read
+      - sessions:admin
+      - users:activity:read
+      - users:history:read
+      # High-clearance data access
+      - data.sensitive.read
+      - data.personal.read
+      - system:admin  # Requires L4+ clearance in attributes
+    
+  # API Consumer - for service accounts and integrations
+  - name: api-consumer
+    label: API Consumer
+    group: integrations
+    description: Role for service accounts and API integrations
+    permissions:
+      # Basic API access
+      - api.read
+      - companies:read
+      - projects:read
+      - units:read
+      # Specific integration permissions
+      - integrations.webhook.receive
+      - exports:create
+      - indexes:convert
+      - indexes:currencies:read

@@ -1,0 +1,305 @@
+name: ${APP_NAME:-app}-dev
+
+services:
+  # Main PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ${APP_NAME:-app}-postgres-dev
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app_main}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Service with hot-reload
+  api:
+    build:
+      context: .
+      dockerfile: ./packages/api/Dockerfile.dev
+    container_name: ${APP_NAME:-app}-api-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL:-postgresql://app_user:app_password@postgres:5432/app_main}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-app_main}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      APP_NAME: ${APP_NAME:-app}
+      COOKIE_SECRET: ${COOKIE_SECRET:-your-cookie-secret-here-change-in-production}
+      SESSION_EXPIRATION_MINUTES: ${SESSION_EXPIRATION_MINUTES:-120}
+      GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
+      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL:-http://localhost:3000/api/access/google/redirect}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL:-http://localhost:5173}
+      SYSTEM_USER_EMAIL: ${SYSTEM_USER_EMAIL:-system@template.com}
+      SYSTEM_USER_ALIAS: ${SYSTEM_USER_ALIAS:-System}
+      SYSTEM_USER_FIRST_NAME: ${SYSTEM_USER_FIRST_NAME:-System}
+      SYSTEM_USER_LAST_NAME: ${SYSTEM_USER_LAST_NAME:-User}
+      SFTP_HOST: sftp
+      SFTP_PORT: 22
+      SFTP_USERNAME: ${SFTP_USERNAME:-app_user}
+      SFTP_PASSWORD: ${SFTP_PASSWORD:-app_sftp_password}
+      FE_URL: ${FE_URL:-http://localhost:5173}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_REQUESTS: ${LOG_REQUESTS:-false}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - "${API_PORT:-3000}:3000"
+      - "9229:9229"  # Node.js debugging port
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sftp:
+        condition: service_started
+      opensearch:
+        condition: service_healthy
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    volumes:
+      # Mount source code for hot-reload
+      - ./packages/api:/app
+      - ./packages/shared:/app/shared
+      # Prevent node_modules from being overwritten
+      - api_node_modules:/app/node_modules
+      - ./packages/api/uploads:/app/uploads
+    command: npm run dev
+
+  # Web Application with hot-reload
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile.dev
+    container_name: ${APP_NAME:-app}-web-dev
+    environment:
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=5173
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+      - VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN:-localhost}
+      - VITE_PLAUSIBLE_URL=${VITE_PLAUSIBLE_URL:-http://localhost:8000}
+      - VITE_SITE_NAME=${VITE_SITE_NAME:-My App}
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes in Docker
+      - WATCHPACK_POLLING=true
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      # Mount source code for hot-reload
+      - ./packages/web:/app
+      # Prevent node_modules from being overwritten
+      - web_node_modules:/app/node_modules
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ${APP_NAME:-app}-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_dev_data:/var/lib/rabbitmq
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  # Message Publisher Service
+  message-publisher:
+    build:
+      context: .
+      dockerfile: ./services/message-publisher/Dockerfile
+      target: development
+    container_name: ${APP_NAME:-app}-message-publisher-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL:-postgresql://app_user:app_password@postgres:5432/app_main}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      LOG_LEVEL: ${MESSAGE_PUBLISHER_LOG_LEVEL:-debug}
+      CDC_OUTBOX_CONFIG_PATH: /app/config/cdc-outbox.yml
+    volumes:
+      - ./packages/api/drizzle/config/cdc-outbox.yml:/app/config/cdc-outbox.yml:ro
+      - ./services/message-publisher:/app
+      - message_publisher_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+
+  # SFTP Server
+  sftp:
+    image: atmoz/sftp:latest
+    container_name: ${APP_NAME:-app}-sftp-dev
+    environment:
+      SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
+    ports:
+      - "${SFTP_PORT:-2222}:22"
+    volumes:
+      - sftp_dev_data:/home/${SFTP_USERNAME:-app_user}/upload
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+
+  # OpenSearch for logging
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: ${APP_NAME:-app}-opensearch-dev
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - plugins.security.disabled=true
+      - cluster.name=app-logs-dev
+      - node.name=app-node-dev-1
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch_dev_data:/usr/share/opensearch/data
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+      - "${OPENSEARCH_TRANSPORT_PORT:-9300}:9300"
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # OpenSearch Dashboards for log visualization
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.1
+    container_name: ${APP_NAME:-app}-opensearch-dashboards-dev
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+      OPENSEARCH_SECURITY_DISABLED: "true"
+    command: >
+      bash -c "
+        ./bin/opensearch-dashboards-plugin remove securityDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove alertingDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove anomalyDetectionDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove indexManagementDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove notificationsDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove reportsDashboards --allow-root || true;
+        ./bin/opensearch-dashboards-plugin remove securityAnalyticsDashboards --allow-root || true;
+        echo 'opensearch.hosts: [\"http://opensearch:9200\"]' > /usr/share/opensearch-dashboards/config/opensearch_dashboards.yml;
+        echo 'server.host: \"0.0.0.0\"' >> /usr/share/opensearch-dashboards/config/opensearch_dashboards.yml;
+        echo 'opensearch.ssl.verificationMode: none' >> /usr/share/opensearch-dashboards/config/opensearch_dashboards.yml;
+        ./opensearch-dashboards-docker-entrypoint.sh
+      "
+    ports:
+      - "${OPENSEARCH_DASHBOARDS_PORT:-5601}:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Plausible Analytics Database (separate from app database)
+  plausible_db:
+    image: postgres:15-alpine
+    container_name: ${APP_NAME:-app}-plausible-postgres-dev
+    environment:
+      POSTGRES_DB: plausible
+      POSTGRES_USER: plausible
+      POSTGRES_PASSWORD: ${PLAUSIBLE_DB_PASSWORD:-plausible_password}
+    volumes:
+      - plausible_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plausible"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # Plausible Analytics
+  plausible:
+    image: plausible/analytics:v2.0.0
+    container_name: ${APP_NAME:-app}-plausible-dev
+    command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+    environment:
+      BASE_URL: ${PLAUSIBLE_BASE_URL:-http://localhost:8000}
+      SECRET_KEY_BASE: ${PLAUSIBLE_SECRET_KEY:-insecure-64-character-secret-key-for-development-only-change-this}
+      DATABASE_URL: postgresql://plausible:${PLAUSIBLE_DB_PASSWORD:-plausible_password}@plausible_db:5432/plausible
+      DISABLE_REGISTRATION: ${PLAUSIBLE_DISABLE_REGISTRATION:-false}
+      MAILER_EMAIL: ${PLAUSIBLE_MAILER_EMAIL:-hello@plausible.local}
+      SMTP_HOST_ADDR: ${SMTP_HOST_ADDR:-localhost}
+      SMTP_HOST_PORT: ${SMTP_HOST_PORT:-25}
+      TOTP_VAULT_KEY: ${PLAUSIBLE_TOTP_VAULT_KEY:-Ak6BqSWnhuP7JEtHSY0r6QOcMORG4ZoJ_7CA}
+      # Auto-configuration environment variables
+      PLAUSIBLE_ADMIN_NAME: ${PLAUSIBLE_ADMIN_NAME:-Admin User}
+      PLAUSIBLE_ADMIN_EMAIL: ${PLAUSIBLE_ADMIN_EMAIL:-admin@localhost}
+      PLAUSIBLE_ADMIN_PASSWORD: ${PLAUSIBLE_ADMIN_PASSWORD:-admin123}
+      PLAUSIBLE_SITE_DOMAIN: ${PLAUSIBLE_SITE_DOMAIN:-localhost}
+    ports:
+      - "${PLAUSIBLE_PORT:-8000}:8000"
+    depends_on:
+      plausible_db:
+        condition: service_healthy
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+
+networks:
+  app-network-dev:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  rabbitmq_dev_data:
+    driver: local
+  sftp_dev_data:
+    driver: local
+  opensearch_dev_data:
+    driver: local
+  api_node_modules:
+    driver: local
+  web_node_modules:
+    driver: local
+  message_publisher_node_modules:
+    driver: local
+  plausible_db_data:
+    driver: local

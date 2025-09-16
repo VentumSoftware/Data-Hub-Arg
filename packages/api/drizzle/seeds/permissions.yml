@@ -1,0 +1,97 @@
+permissions:
+  # File System - Read Operations
+  - name: fs:read:node
+    label: Read Node
+    group: fs-read
+    description: View file/directory information
+    
+  - name: fs:list:directory
+    label: List Directory
+    group: fs-read
+    description: List directory contents
+    
+  - name: fs:read:file
+    label: Read File
+    group: fs-read
+    description: Read file contents
+    
+  - name: fs:serve:file
+    label: Serve File
+    group: fs-read
+    description: Serve files publicly
+
+  # File System - Write Operations
+  - name: fs:create:directory
+    label: Create Directory
+    group: fs-write
+    description: Create new directories
+    
+  - name: fs:upload:file
+    label: Upload File
+    group: fs-write
+    description: Upload new files
+    
+  - name: fs:write:file
+    label: Write File
+    group: fs-write
+    description: Write file contents
+
+  # File System - Modify Operations
+  - name: fs:rename:node
+    label: Rename Node
+    group: fs-modify
+    description: Rename or move files/directories
+    
+  - name: fs:move:node
+    label: Move Node
+    group: fs-modify
+    description: Move files/directories
+
+  # File System - Delete Operations
+  - name: fs:delete:file
+    label: Delete File
+    group: fs-delete
+    description: Delete files
+    
+  - name: fs:delete:directory
+    label: Delete Directory
+    group: fs-delete
+    description: Delete directories
+    
+  - name: fs:delete:recursive
+    label: Delete Recursive
+    group: fs-delete
+    description: Delete directories recursively
+
+  # File System - Admin Operations
+  - name: fs:admin
+    label: FS Admin
+    group: fs-admin
+    description: Full file system administration
+
+  # User Management (example for future)
+  - name: users:read
+    label: Read Users
+    group: user-management
+    description: View user information
+    
+  - name: users:create
+    label: Create Users
+    group: user-management
+    description: Create new users
+    
+  - name: users:update
+    label: Update Users
+    group: user-management
+    description: Update user information
+    
+  - name: users:delete
+    label: Delete Users
+    group: user-management
+    description: Delete users
+
+  # System Admin
+  - name: system:admin
+    label: System Admin
+    group: system
+    description: Full system administration

@@ -1,0 +1,25 @@
+backup:
+  # Backup Configuration for CDC Tables
+  enabled: true
+  path: "../../../../local/backups/drizzle/cdc"  # Relative to drizzle/backup directory (project root)
+  format: "sql"  # sql, csv, or json
+  compress: false  # Whether to compress backup files
+  retention_days: 30  # How long to keep backup files
+
+  # Backup triggers
+  triggers:
+    before_migration: true    # Backup before drizzle push
+    manual: true             # Allow manual backups
+    
+  # What to include in backups
+  include:
+    data: true              # Include table data
+    schema: false           # Include table schema (usually not needed for CDC)
+    indexes: false          # Include indexes
+    triggers: false         # Include trigger definitions
+
+  # Backup naming
+  naming:
+    include_timestamp: true
+    include_table_name: true
+    include_row_count: false

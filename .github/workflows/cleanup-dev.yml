@@ -1,0 +1,53 @@
+name: Cleanup Dev Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project name to cleanup (will destroy droplet and DNS)'
+        required: true
+        type: string
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Destroy Droplet
+        run: |
+          DROPLET_NAME="${{ github.event.inputs.project_name }}-dev"
+          
+          if doctl compute droplet list --format Name | grep -q "^${DROPLET_NAME}$"; then
+            echo "Destroying droplet: ${DROPLET_NAME}"
+            doctl compute droplet delete ${DROPLET_NAME} --force
+            echo "✅ Droplet destroyed"
+          else
+            echo "⚠️ Droplet not found: ${DROPLET_NAME}"
+          fi
+
+      - name: Remove DNS Record
+        run: |
+          node scripts/cloudflare-dns.js delete ${{ github.event.inputs.project_name }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+
+      - name: Cleanup Summary
+        run: |
+          echo "## 🧹 Dev Environment Cleaned Up!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Removed Resources:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Droplet: ${{ github.event.inputs.project_name }}-dev" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ DNS Record: ${{ github.event.inputs.project_name }}.dev.ventum.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SSL Certificate (automatically cleaned)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The development environment has been completely removed."

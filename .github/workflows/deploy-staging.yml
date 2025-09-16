@@ -1,0 +1,184 @@
+name: Deploy to Staging - App Platform
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Build container images
+        run: |
+          docker build -t ${{ secrets.APP_NAME }}-backend:staging ./packages/backend
+          docker build -t ${{ secrets.APP_NAME }}-frontend:staging ./packages/frontend
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login
+
+      - name: Tag images for registry
+        run: |
+          docker tag ${{ secrets.APP_NAME }}-backend:staging registry.digitalocean.com/${{ secrets.DO_REGISTRY_NAME }}/${{ secrets.APP_NAME }}-backend:staging
+          docker tag ${{ secrets.APP_NAME }}-frontend:staging registry.digitalocean.com/${{ secrets.DO_REGISTRY_NAME }}/${{ secrets.APP_NAME }}-frontend:staging
+
+      - name: Push images to registry
+        run: |
+          docker push registry.digitalocean.com/${{ secrets.DO_REGISTRY_NAME }}/${{ secrets.APP_NAME }}-backend:staging
+          docker push registry.digitalocean.com/${{ secrets.DO_REGISTRY_NAME }}/${{ secrets.APP_NAME }}-frontend:staging
+
+  deploy-app-platform:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Create App Platform spec
+        run: |
+          cat > app-spec.yaml << EOF
+          name: ${{ secrets.APP_NAME }}-staging
+          region: ${{ secrets.DO_REGION || 'nyc' }}
+          domains:
+            - domain: staging.${{ secrets.DOMAIN_NAME }}
+              type: PRIMARY
+          
+          services:
+            - name: backend
+              image:
+                registry_type: DOCR
+                registry: ${{ secrets.DO_REGISTRY_NAME }}
+                repository: ${{ secrets.APP_NAME }}-backend
+                tag: staging
+              instance_count: 2
+              instance_size_slug: professional-xs
+              http_port: 3000
+              routes:
+                - path: /api
+              health_check:
+                http_path: /health
+                initial_delay_seconds: 30
+                period_seconds: 10
+              envs:
+                - key: NODE_ENV
+                  value: staging
+                - key: DATABASE_URL
+                  value: \${db.DATABASE_URL}
+                - key: JWT_SECRET
+                  value: ${{ secrets.STAGING_JWT_SECRET }}
+                - key: GOOGLE_CLIENT_ID
+                  value: ${{ secrets.GOOGLE_CLIENT_ID }}
+                - key: GOOGLE_CLIENT_SECRET
+                  value: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+                - key: REDIS_URL
+                  value: \${redis.DATABASE_URL}
+              
+            - name: frontend
+              image:
+                registry_type: DOCR
+                registry: ${{ secrets.DO_REGISTRY_NAME }}
+                repository: ${{ secrets.APP_NAME }}-frontend
+                tag: staging
+              instance_count: 2
+              instance_size_slug: professional-xs
+              http_port: 5173
+              routes:
+                - path: /
+              envs:
+                - key: NODE_ENV
+                  value: staging
+                - key: VITE_API_URL
+                  value: https://staging.${{ secrets.DOMAIN_NAME }}/api
+          
+          databases:
+            - name: db
+              engine: PG
+              version: "15"
+              size: db-s-1vcpu-1gb
+              num_nodes: 1
+            
+            - name: redis
+              engine: REDIS
+              version: "7"
+              size: db-s-1vcpu-1gb
+              num_nodes: 1
+          
+          jobs:
+            - name: migrate
+              kind: PRE_DEPLOY
+              image:
+                registry_type: DOCR
+                registry: ${{ secrets.DO_REGISTRY_NAME }}
+                repository: ${{ secrets.APP_NAME }}-backend
+                tag: staging
+              run_command: npm run migration:run
+              envs:
+                - key: DATABASE_URL
+                  value: \${db.DATABASE_URL}
+          EOF
+
+      - name: Deploy to App Platform
+        run: |
+          # Check if app exists
+          if doctl apps list --format ID,Spec.Name | grep -q "${{ secrets.APP_NAME }}-staging"; then
+            APP_ID=$(doctl apps list --format ID,Spec.Name | grep "${{ secrets.APP_NAME }}-staging" | awk '{print $1}')
+            echo "Updating existing app: $APP_ID"
+            doctl apps update $APP_ID --spec app-spec.yaml
+          else
+            echo "Creating new app"
+            doctl apps create --spec app-spec.yaml
+          fi
+
+      - name: Wait for deployment
+        run: |
+          APP_ID=$(doctl apps list --format ID,Spec.Name | grep "${{ secrets.APP_NAME }}-staging" | awk '{print $1}')
+          
+          for i in {1..60}; do
+            STATUS=$(doctl apps get $APP_ID --format ActiveDeployment.Phase --no-header)
+            echo "Deployment status: $STATUS"
+            
+            if [ "$STATUS" = "ACTIVE" ]; then
+              echo "Deployment successful!"
+              break
+            elif [ "$STATUS" = "ERROR" ] || [ "$STATUS" = "CANCELED" ]; then
+              echo "Deployment failed!"
+              exit 1
+            fi
+            
+            sleep 10
+          done
+
+      - name: Output deployment info
+        run: |
+          APP_ID=$(doctl apps list --format ID,Spec.Name | grep "${{ secrets.APP_NAME }}-staging" | awk '{print $1}')
+          APP_URL=$(doctl apps get $APP_ID --format LiveURL --no-header)
+          
+          echo "## 🎯 Staging Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### App Platform Details:" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: $APP_URL" >> $GITHUB_STEP_SUMMARY
+          echo "- **Custom Domain**: https://staging.${{ secrets.DOMAIN_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **App ID**: $APP_ID" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Features:" >> $GITHUB_STEP_SUMMARY
+          echo "- Auto-scaling enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Managed PostgreSQL database" >> $GITHUB_STEP_SUMMARY
+          echo "- Managed Redis cache" >> $GITHUB_STEP_SUMMARY
+          echo "- Zero-downtime deployments" >> $GITHUB_STEP_SUMMARY

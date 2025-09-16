@@ -1,0 +1,325 @@
+roles:
+  - name: superadmin
+    label: Super Administrator
+    group: system
+    description: Full system access with all permissions
+    permissions:
+      # File System
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      - fs:create:directory
+      - fs:upload:file
+      - fs:write:file
+      - fs:rename:node
+      - fs:move:node
+      - fs:delete:file
+      - fs:delete:directory
+      - fs:delete:recursive
+      - fs:admin
+      # User Management
+      - users:read
+      - users:create
+      - users:update
+      - users:delete
+      - users:activity:read
+      - users:history:read
+      # System
+      - system:admin
+      # Companies
+      - companies:create
+      - companies:read
+      - companies:update
+      - companies:delete
+      # Projects
+      - projects:create
+      - projects:read
+      - projects:update
+      - projects:delete
+      # Units
+      - units:create
+      - units:read
+      - units:update
+      - units:delete
+      # Ownership
+      - ownership:create
+      - ownership:read
+      - ownership:update
+      - ownership:delete
+      # Payments
+      - payments:create
+      - payments:read
+      - payments:update
+      - payments:delete
+      # Comments
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:delete
+      - comments:moderate
+      # Groups
+      - groups:create
+      - groups:read
+      - groups:update
+      - groups:delete
+      # User Groups
+      - user-groups:create
+      - user-groups:read
+      - user-groups:update
+      - user-groups:delete
+      - user-groups:manage-members
+      # Access Control
+      - permissions:read
+      - roles:create
+      - roles:read
+      - roles:update
+      - roles:delete
+      - access:assign-permissions
+      - access:assign-roles
+      # Sessions
+      - sessions:read
+      - sessions:revoke
+      - sessions:admin
+      # Indexes
+      - indexes:admin
+      - indexes:currencies:create
+      - indexes:currencies:read
+      - indexes:currencies:update
+      - indexes:currencies:delete
+      - indexes:relations:create
+      - indexes:relations:read
+      - indexes:relations:update
+      - indexes:relations:delete
+      - indexes:indexes:create
+      - indexes:indexes:read
+      - indexes:indexes:update
+      - indexes:indexes:delete
+      - indexes:convert
+      - indexes:path:read
+      # Mailing
+      - mailing:create
+      - mailing:read
+      - mailing:templates:manage
+      - mailing:admin
+
+  - name: admin
+    label: Administrator
+    group: management
+    description: Administrative access with most permissions
+    permissions:
+      # File System (most permissions)
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      - fs:create:directory
+      - fs:upload:file
+      - fs:write:file
+      - fs:rename:node
+      - fs:move:node
+      - fs:delete:file
+      - fs:delete:directory
+      - fs:delete:recursive
+      # User Management (no delete)
+      - users:read
+      - users:create
+      - users:update
+      - users:activity:read
+      - users:history:read
+      # Companies
+      - companies:create
+      - companies:read
+      - companies:update
+      # Projects
+      - projects:create
+      - projects:read
+      - projects:update
+      # Units
+      - units:create
+      - units:read
+      - units:update
+      # Ownership
+      - ownership:create
+      - ownership:read
+      - ownership:update
+      # Payments
+      - payments:create
+      - payments:read
+      - payments:update
+      # Comments
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:delete
+      - comments:moderate
+      # Groups
+      - groups:read
+      - groups:update
+      # User Groups
+      - user-groups:read
+      - user-groups:manage-members
+      # Access Control (read only)
+      - permissions:read
+      - roles:read
+      # Sessions (read only)
+      - sessions:read
+      # Indexes (most operations)
+      - indexes:currencies:read
+      - indexes:currencies:update
+      - indexes:relations:read
+      - indexes:relations:update
+      - indexes:indexes:create
+      - indexes:indexes:read
+      - indexes:indexes:update
+      - indexes:convert
+      - indexes:path:read
+      # Mailing
+      - mailing:create
+      - mailing:read
+      - mailing:templates:manage
+
+  - name: manager
+    label: Manager
+    group: management
+    description: Management access for business operations
+    permissions:
+      # File System (basic)
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      - fs:upload:file
+      # User Management (read only)
+      - users:read
+      - users:activity:read
+      - users:history:read
+      # Companies (read)
+      - companies:read
+      # Projects
+      - projects:create
+      - projects:read
+      - projects:update
+      # Units
+      - units:create
+      - units:read
+      - units:update
+      # Ownership
+      - ownership:create
+      - ownership:read
+      - ownership:update
+      # Payments
+      - payments:create
+      - payments:read
+      - payments:update
+      # Comments
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:delete
+      # Groups (read)
+      - groups:read
+      # Indexes (basic operations)
+      - indexes:currencies:read
+      - indexes:relations:read
+      - indexes:indexes:read
+      - indexes:convert
+      - indexes:path:read
+      # Mailing
+      - mailing:create
+      - mailing:read
+
+  - name: user
+    label: User
+    group: general
+    description: Basic user access with limited permissions
+    permissions:
+      # File System (read + upload)
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      - fs:upload:file
+      # User Management (read only)
+      - users:read
+      # Companies (read)
+      - companies:read
+      # Projects (read)
+      - projects:read
+      # Units (read)
+      - units:read
+      # Ownership (read own)
+      - ownership:read
+      # Payments (read own)
+      - payments:read
+      # Comments (basic)
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:delete
+      # Indexes (read + convert)
+      - indexes:currencies:read
+      - indexes:relations:read
+      - indexes:indexes:read
+      - indexes:convert
+      - indexes:path:read
+      # Mailing (read)
+      - mailing:read
+
+  - name: guest
+    label: Guest
+    group: general
+    description: Read-only access for guests
+    permissions:
+      # File System (read only)
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      # Basic read permissions
+      - companies:read
+      - projects:read
+      # Comments (read only)
+      - comments:read
+      # Indexes (read + convert)
+      - indexes:currencies:read
+      - indexes:relations:read
+      - indexes:indexes:read
+      - indexes:convert
+      - indexes:path:read
+
+  - name: owner
+    label: Unit Owner
+    group: owners
+    description: Access for unit owners to view their units and payments
+    permissions:
+      # File System (read + upload)
+      - fs:read:node
+      - fs:list:directory
+      - fs:read:file
+      - fs:serve:file
+      - fs:upload:file
+      # User Management (read own)
+      - users:read
+      # Companies (read)
+      - companies:read
+      # Projects (read)
+      - projects:read
+      # Units (read own)
+      - units:read
+      # Ownership (read own)
+      - ownership:read
+      # Payments (read own + create)
+      - payments:create
+      - payments:read
+      # Comments (for own units)
+      - comments:create
+      - comments:read
+      - comments:update
+      - comments:delete
+      # Indexes (read + convert)
+      - indexes:currencies:read
+      - indexes:relations:read
+      - indexes:indexes:read
+      - indexes:convert
+      - indexes:path:read

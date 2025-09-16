@@ -1,0 +1,55 @@
+# User Groups for the RBAC/ABAC system
+# Groups provide cross-cutting permissions beyond roles
+
+userGroups:
+  - name: beta-users
+    description: Users with access to beta features and testing
+    permissions:
+      - api.beta.access
+      - features.beta.test
+    
+  - name: external-contractors
+    description: External contractors with limited system access
+    permissions:
+      - profile.read
+      - profile.edit
+      - comments.create
+      - comments.read
+      - fs.read.limited
+    
+  - name: data-analysts  
+    description: Users who can access analytical data and reports
+    permissions:
+      - data.analytics.read
+      - reports.generate
+      - exports.create
+    
+  - name: financial-team
+    description: Financial team with access to payment and financial data
+    permissions:
+      - data.financial.read
+      - payments.advanced.read
+      - reports.financial.generate
+    
+  - name: hr-team
+    description: Human resources team
+    permissions:
+      - users.hr.manage
+      - data.personal.read
+      - attributes.hr.edit
+    
+  - name: security-team
+    description: Security team with elevated access
+    permissions:
+      - data.sensitive.read
+      - audit.read
+      - sessions.admin
+      - users.security.investigate
+    
+  - name: compliance-officers
+    description: Compliance and audit officers
+    permissions:
+      - audit.read
+      - compliance.manage
+      - data.sensitive.read
+      - reports.compliance.generate

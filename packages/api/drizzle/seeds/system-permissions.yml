@@ -1,0 +1,116 @@
+# Additional permissions for the new RBAC/ABAC system
+# These complement the existing permissions.yml and app-permissions.yml
+
+permissions:
+  # Administrative Panel Access  
+  - name: admin.access
+    label: Admin Panel Access
+    group: admin-access
+    description: Access to administrative panels and features
+    
+  - name: admin.system.analysis
+    label: System Analysis
+    group: admin-access
+    description: Access to system analysis and permission debugging tools
+    
+  - name: admin.users.impersonate
+    label: Impersonate Users
+    group: admin-access
+    description: Ability to impersonate other users for testing/support
+    
+  # Management Access Levels
+  - name: management.access
+    label: Management Access
+    group: management-access  
+    description: Access to management-level features and data
+    
+  - name: operations.access
+    label: Operations Access
+    group: operations-access
+    description: Access to operational systems and tools
+    
+  # Profile and Personal Data
+  - name: profile.read
+    label: Read Profile
+    group: profile-management
+    description: Read own profile information
+    
+  - name: profile.edit
+    label: Edit Profile
+    group: profile-management
+    description: Edit own profile information
+    
+  - name: profile.attributes.edit
+    label: Edit Profile Attributes
+    group: profile-management
+    description: Edit own ABAC attributes (limited)
+    
+  # Permission System Management
+  - name: permissions.debug
+    label: Debug Permissions
+    group: system-debug
+    description: Access to permission debugging tools
+    
+  - name: scopes.manage
+    label: Manage Scopes
+    group: scope-management
+    description: Create and manage permission scopes
+    
+  - name: attributes.manage
+    label: Manage Attributes
+    group: attribute-management
+    description: Manage user ABAC attributes
+    
+  # Deployment and Operations
+  - name: deployment.execute
+    label: Execute Deployment
+    group: deployment
+    description: Execute deployment operations
+    
+  - name: deployment.approve
+    label: Approve Deployment  
+    group: deployment
+    description: Approve deployment operations
+    
+  - name: monitoring.access
+    label: Access Monitoring
+    group: monitoring
+    description: Access to system monitoring tools
+    
+  # Data Access Levels
+  - name: data.sensitive.read
+    label: Read Sensitive Data
+    group: data-access
+    description: Access to sensitive/classified data
+    
+  - name: data.financial.read
+    label: Read Financial Data
+    group: data-access
+    description: Access to financial information
+    
+  - name: data.personal.read
+    label: Read Personal Data
+    group: data-access
+    description: Access to personal/PII data
+    
+  # API and Integration
+  - name: api.admin
+    label: API Administration
+    group: api-management
+    description: Administrative access to API features
+    
+  - name: integrations.manage
+    label: Manage Integrations
+    group: integration-management
+    description: Configure and manage third-party integrations
+    
+  # Audit and Compliance
+  - name: audit.read
+    label: Read Audit Logs
+    group: audit-compliance
+    description: Access to audit logs and compliance reports
+    
+  - name: compliance.manage
+    label: Manage Compliance
+    group: audit-compliance
+    description: Manage compliance settings and requirements

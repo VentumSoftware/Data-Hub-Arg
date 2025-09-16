@@ -1,0 +1,46 @@
+# OpenSearch Dashboards Configuration for App Logging
+
+# Server settings
+server.name: app-dashboards
+server.host: "0.0.0.0"
+server.port: 5601
+
+# OpenSearch connection
+opensearch.hosts: ["http://opensearch:9200"]
+opensearch.requestTimeout: 30000
+opensearch.shardTimeout: 30000
+
+# Logging settings
+logging.root.level: warn
+
+# Security (disabled for development)
+opensearch_security.enabled: false
+
+# UI settings
+server.maxPayload: 1048576
+
+# Index patterns
+# These will be created automatically when logs start flowing
+default_index_patterns:
+  - "logs-*"
+  - "metrics-*"
+  - "errors-*"
+
+# Dashboard settings
+opensearchDashboards.index: ".opensearch_dashboards"
+
+# Enable legacy Elasticsearch plugins compatibility
+opensearch.legacy.enabled: false
+
+# Disable telemetry
+telemetry.enabled: false
+telemetry.optIn: false
+
+# Console settings (for Dev Tools)
+console.enabled: true
+
+# Saved Objects
+savedObjects.maxImportPayloadBytes: 26214400
+
+# Advanced settings
+vis_type_timeline.enabled: false

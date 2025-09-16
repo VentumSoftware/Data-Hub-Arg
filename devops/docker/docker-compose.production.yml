@@ -1,0 +1,123 @@
+# Production environment with external managed services
+services:
+  # Main API Service
+  api:
+    build:
+      context: ../../packages/api
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:-app}-api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
+      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL}
+      # For production, consider using cloud storage instead of SFTP
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_REGION: ${AWS_REGION}
+    expose:
+      - "3000"
+    networks:
+      - app-network
+    restart: unless-stopped
+    # Remove SFTP dependency for production
+    volumes:
+      - uploads_data:/app/uploads
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Web Application (production build)
+  web:
+    build:
+      context: ../../packages/web
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:-app}-web
+    environment:
+      - VITE_API_URL=/api
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME:-app}-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../../services/nginx/nginx.prod.conf:/etc/nginx/nginx.conf
+      - ../../services/nginx/ssl:/etc/nginx/ssl
+      - ../../packages/web/dist:/usr/share/nginx/html
+      # Add certbot for Let's Encrypt
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: ${APP_NAME:-app}-certbot
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${SSL_EMAIL} --agree-tos --no-eff-email -d ${DOMAIN_NAME}
+    depends_on:
+      - nginx
+
+  # Redis for caching and sessions (production)
+  redis:
+    image: redis:7-alpine
+    container_name: ${APP_NAME:-app}-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  uploads_data:
+    driver: local
+  certbot_certs:
+    driver: local
+  certbot_www:
+    driver: local
+  redis_data:
+    driver: local

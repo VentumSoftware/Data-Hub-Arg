@@ -1,0 +1,70 @@
+audit:
+  # CDC Table Configuration
+  config:
+    prefix: "_cdc_"  # Prefix for audit tables
+    enabled: true   # Enable/disable CDC globally
+    
+  # Tables to audit (must have editedBy, editedAt, editedSession columns)
+  # Table names must match PostgreSQL naming (lowercase)
+  tables:
+    - name: users
+      enabled: true
+      description: "User account changes"
+      
+    - name: roles
+      enabled: true  
+      description: "Role definition changes"
+      
+    - name: permissions
+      enabled: true
+      description: "Permission definition changes"
+      
+    - name: permissionsUsersMap
+      enabled: true
+      description: "User permission assignments"
+      
+    - name: permissionsRolesMap
+      enabled: true
+      description: "Role permission assignments"
+      
+    - name: usersRolesMap
+      enabled: true
+      description: "User role assignments"
+      
+    - name: usersGroups
+      enabled: true
+      description: "User group definitions"
+      
+    - name: usersGroupsMap
+      enabled: true
+      description: "User group memberships"
+      
+    - name: permissionsGroupsMap
+      enabled: true
+      description: "Group permission assignments"
+      
+    - name: sessions
+      enabled: false
+      description: "User session changes (disabled for performance)"
+      
+    - name: fsNodes
+      enabled: true
+      description: "File system node changes"
+      
+    - name: comments
+      enabled: true
+      description: "Comment changes"
+      
+    - name: groups
+      enabled: true
+      description: "Generic group changes"
+      
+    - name: groupMemberships
+      enabled: true
+      description: "Group membership changes"
+
+  # Operations to track
+  operations:
+    - INSERT    # Track record creation
+    - UPDATE    # Track record updates  
+    - DELETE    # Track record deletion (soft or hard)

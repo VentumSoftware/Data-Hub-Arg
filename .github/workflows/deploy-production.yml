@@ -1,0 +1,434 @@
+name: Deploy to Production - Kubernetes
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+
+env:
+  CLUSTER_NAME: ${{ secrets.APP_NAME }}-prod-cluster
+  REGISTRY: registry.digitalocean.com/${{ secrets.DO_REGISTRY_NAME }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Deploying version: ${VERSION}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./packages/backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:buildcache,mode=max
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./packages/frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-frontend:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-frontend:latest
+          build-args: |
+            VITE_API_URL=https://api.${{ secrets.DOMAIN_NAME }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-frontend:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-frontend:buildcache,mode=max
+
+  deploy-kubernetes:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Create/Update Kubernetes cluster
+        run: |
+          # Check if cluster exists
+          if doctl kubernetes cluster list --format Name | grep -q "^${CLUSTER_NAME}$"; then
+            echo "Cluster exists"
+          else
+            echo "Creating Kubernetes cluster..."
+            doctl kubernetes cluster create ${CLUSTER_NAME} \
+              --region ${{ secrets.DO_REGION || 'nyc1' }} \
+              --version latest \
+              --node-pool "name=worker-pool;size=s-2vcpu-4gb;count=3;auto-scale=true;min-nodes=2;max-nodes=10" \
+              --wait
+          fi
+          
+          # Save kubeconfig
+          doctl kubernetes cluster kubeconfig save ${CLUSTER_NAME}
+
+      - name: Create Kubernetes manifests
+        run: |
+          mkdir -p k8s
+          
+          # Namespace
+          cat > k8s/namespace.yaml << EOF
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: production
+          EOF
+          
+          # ConfigMap
+          cat > k8s/configmap.yaml << EOF
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: app-config
+            namespace: production
+          data:
+            NODE_ENV: "production"
+            BACKEND_PORT: "3000"
+            FRONTEND_PORT: "5173"
+          EOF
+          
+          # Secret
+          cat > k8s/secret.yaml << EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: app-secrets
+            namespace: production
+          type: Opaque
+          stringData:
+            DATABASE_URL: "${{ secrets.PROD_DATABASE_URL }}"
+            JWT_SECRET: "${{ secrets.PROD_JWT_SECRET }}"
+            GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
+            GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            REDIS_URL: "${{ secrets.PROD_REDIS_URL }}"
+          EOF
+          
+          # Backend Deployment
+          cat > k8s/backend-deployment.yaml << EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: backend
+            namespace: production
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: backend
+            template:
+              metadata:
+                labels:
+                  app: backend
+              spec:
+                containers:
+                - name: backend
+                  image: ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:${{ needs.build-and-push.outputs.version }}
+                  ports:
+                  - containerPort: 3000
+                  envFrom:
+                  - configMapRef:
+                      name: app-config
+                  - secretRef:
+                      name: app-secrets
+                  resources:
+                    requests:
+                      memory: "256Mi"
+                      cpu: "250m"
+                    limits:
+                      memory: "512Mi"
+                      cpu: "500m"
+                  livenessProbe:
+                    httpGet:
+                      path: /health
+                      port: 3000
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
+                  readinessProbe:
+                    httpGet:
+                      path: /health
+                      port: 3000
+                    initialDelaySeconds: 5
+                    periodSeconds: 5
+          EOF
+          
+          # Frontend Deployment
+          cat > k8s/frontend-deployment.yaml << EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: frontend
+            namespace: production
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: frontend
+            template:
+              metadata:
+                labels:
+                  app: frontend
+              spec:
+                containers:
+                - name: frontend
+                  image: ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-frontend:${{ needs.build-and-push.outputs.version }}
+                  ports:
+                  - containerPort: 5173
+                  resources:
+                    requests:
+                      memory: "128Mi"
+                      cpu: "100m"
+                    limits:
+                      memory: "256Mi"
+                      cpu: "200m"
+          EOF
+          
+          # Services
+          cat > k8s/services.yaml << EOF
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: backend-service
+            namespace: production
+          spec:
+            selector:
+              app: backend
+            ports:
+            - port: 3000
+              targetPort: 3000
+            type: ClusterIP
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: frontend-service
+            namespace: production
+          spec:
+            selector:
+              app: frontend
+            ports:
+            - port: 5173
+              targetPort: 5173
+            type: ClusterIP
+          EOF
+          
+          # Ingress
+          cat > k8s/ingress.yaml << EOF
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: app-ingress
+            namespace: production
+            annotations:
+              kubernetes.io/ingress.class: nginx
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              nginx.ingress.kubernetes.io/rate-limit: "100"
+          spec:
+            tls:
+            - hosts:
+              - ${{ secrets.DOMAIN_NAME }}
+              - api.${{ secrets.DOMAIN_NAME }}
+              secretName: app-tls
+            rules:
+            - host: ${{ secrets.DOMAIN_NAME }}
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: frontend-service
+                      port:
+                        number: 5173
+            - host: api.${{ secrets.DOMAIN_NAME }}
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: backend-service
+                      port:
+                        number: 3000
+          EOF
+          
+          # HPA (Horizontal Pod Autoscaler)
+          cat > k8s/hpa.yaml << EOF
+          apiVersion: autoscaling/v2
+          kind: HorizontalPodAutoscaler
+          metadata:
+            name: backend-hpa
+            namespace: production
+          spec:
+            scaleTargetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: backend
+            minReplicas: 3
+            maxReplicas: 20
+            metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 70
+            - type: Resource
+              resource:
+                name: memory
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+          ---
+          apiVersion: autoscaling/v2
+          kind: HorizontalPodAutoscaler
+          metadata:
+            name: frontend-hpa
+            namespace: production
+          spec:
+            scaleTargetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: frontend
+            minReplicas: 2
+            maxReplicas: 10
+            metrics:
+            - type: Resource
+              resource:
+                name: cpu
+                target:
+                  type: Utilization
+                  averageUtilization: 80
+          EOF
+
+      - name: Install Nginx Ingress Controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/do/deploy.yaml
+
+      - name: Install cert-manager
+        run: |
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+          
+          # Wait for cert-manager to be ready
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s
+          
+          # Create ClusterIssuer for Let's Encrypt
+          cat << EOF | kubectl apply -f -
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: letsencrypt-prod
+          spec:
+            acme:
+              server: https://acme-v02.api.letsencrypt.org/directory
+              email: ${{ secrets.ADMIN_EMAIL }}
+              privateKeySecretRef:
+                name: letsencrypt-prod
+              solvers:
+              - http01:
+                  ingress:
+                    class: nginx
+          EOF
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/services.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/hpa.yaml
+          
+          # Run database migrations as a Job
+          cat << EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: migrate-${{ needs.build-and-push.outputs.version }}
+            namespace: production
+          spec:
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                - name: migrate
+                  image: ${{ env.REGISTRY }}/${{ secrets.APP_NAME }}-backend:${{ needs.build-and-push.outputs.version }}
+                  command: ["npm", "run", "migration:run"]
+                  envFrom:
+                  - secretRef:
+                      name: app-secrets
+          EOF
+          
+          # Wait for rollout
+          kubectl rollout status deployment/backend -n production --timeout=600s
+          kubectl rollout status deployment/frontend -n production --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          # Get ingress IP
+          INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          
+          echo "## 🚀 Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Version: ${{ needs.build-and-push.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Kubernetes Cluster:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: ${CLUSTER_NAME}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ingress IP**: ${INGRESS_IP}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Production URLs:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Application**: https://${{ secrets.DOMAIN_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: https://api.${{ secrets.DOMAIN_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Features:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Auto-scaling (3-20 backend pods, 2-10 frontend pods)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SSL/TLS certificates via Let's Encrypt" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Rate limiting enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health checks and auto-recovery" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Zero-downtime deployments" >> $GITHUB_STEP_SUMMARY

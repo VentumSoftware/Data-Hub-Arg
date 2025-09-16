@@ -1,0 +1,346 @@
+# Application-specific permissions
+# These permissions are specific to this application's business logic
+# while permissions.yml contains generic system permissions
+
+permissions:
+  # Company Management
+  - name: companies:create
+    label: Create Company
+    group: company-management
+    description: Create new companies
+    
+  - name: companies:read
+    label: Read Companies
+    group: company-management
+    description: View company information
+    
+  - name: companies:update
+    label: Update Company
+    group: company-management
+    description: Update company information
+    
+  - name: companies:delete
+    label: Delete Company
+    group: company-management
+    description: Delete companies
+
+  # Project Management
+  - name: projects:create
+    label: Create Project
+    group: project-management
+    description: Create new projects
+    
+  - name: projects:read
+    label: Read Projects
+    group: project-management
+    description: View project information
+    
+  - name: projects:update
+    label: Update Project
+    group: project-management
+    description: Update project information
+    
+  - name: projects:delete
+    label: Delete Project
+    group: project-management
+    description: Delete projects
+
+  # Functional Unit Management
+  - name: units:create
+    label: Create Functional Unit
+    group: unit-management
+    description: Create new functional units
+    
+  - name: units:read
+    label: Read Functional Units
+    group: unit-management
+    description: View functional unit information
+    
+  - name: units:update
+    label: Update Functional Unit
+    group: unit-management
+    description: Update functional unit information
+    
+  - name: units:delete
+    label: Delete Functional Unit
+    group: unit-management
+    description: Delete functional units
+
+  # Unit Ownership Management
+  - name: ownership:create
+    label: Create Ownership
+    group: ownership-management
+    description: Create unit ownership records
+    
+  - name: ownership:read
+    label: Read Ownership
+    group: ownership-management
+    description: View ownership information
+    
+  - name: ownership:update
+    label: Update Ownership
+    group: ownership-management
+    description: Update ownership records
+    
+  - name: ownership:delete
+    label: Delete Ownership
+    group: ownership-management
+    description: Remove ownership records
+
+  # Payment Management
+  - name: payments:create
+    label: Create Payment
+    group: payment-management
+    description: Create new payment records
+    
+  - name: payments:read
+    label: Read Payments
+    group: payment-management
+    description: View payment information
+    
+  - name: payments:update
+    label: Update Payment
+    group: payment-management
+    description: Update payment records
+    
+  - name: payments:delete
+    label: Delete Payment
+    group: payment-management
+    description: Delete payment records
+
+  # User Activity & History
+  - name: users:activity:read
+    label: View User Activity
+    group: user-management
+    description: View user activity logs and session history
+    
+  - name: users:history:read
+    label: View User History
+    group: user-management
+    description: View user change history from CDC data
+
+  # Comments System
+  - name: comments:create
+    label: Create Comment
+    group: content-management
+    description: Create comments on entities
+    
+  - name: comments:read
+    label: Read Comments
+    group: content-management
+    description: View comments
+    
+  - name: comments:update
+    label: Update Comment
+    group: content-management
+    description: Update own comments
+    
+  - name: comments:delete
+    label: Delete Comment
+    group: content-management
+    description: Delete own comments
+    
+  - name: comments:moderate
+    label: Moderate Comments
+    group: content-management
+    description: Moderate and manage all comments
+
+  # Group Management
+  - name: groups:create
+    label: Create Group
+    group: group-management
+    description: Create new groups
+    
+  - name: groups:read
+    label: Read Groups
+    group: group-management
+    description: View group information
+    
+  - name: groups:update
+    label: Update Group
+    group: group-management
+    description: Update group information
+    
+  - name: groups:delete
+    label: Delete Group
+    group: group-management
+    description: Delete groups
+
+  # User Groups Management
+  - name: user-groups:create
+    label: Create User Group
+    group: user-group-management
+    description: Create user groups
+    
+  - name: user-groups:read
+    label: Read User Groups
+    group: user-group-management
+    description: View user groups
+    
+  - name: user-groups:update
+    label: Update User Group
+    group: user-group-management
+    description: Update user groups
+    
+  - name: user-groups:delete
+    label: Delete User Group
+    group: user-group-management
+    description: Delete user groups
+    
+  - name: user-groups:manage-members
+    label: Manage Group Members
+    group: user-group-management
+    description: Add/remove users from groups
+
+  # Permissions & Roles Management
+  - name: permissions:read
+    label: Read Permissions
+    group: access-control
+    description: View system permissions
+    
+  - name: roles:create
+    label: Create Role
+    group: access-control
+    description: Create new roles
+    
+  - name: roles:read
+    label: Read Roles
+    group: access-control
+    description: View roles information
+    
+  - name: roles:update
+    label: Update Role
+    group: access-control
+    description: Update role information
+    
+  - name: roles:delete
+    label: Delete Role
+    group: access-control
+    description: Delete roles
+    
+  - name: access:assign-permissions
+    label: Assign Permissions
+    group: access-control
+    description: Assign permissions to users/roles/groups
+    
+  - name: access:assign-roles
+    label: Assign Roles
+    group: access-control
+    description: Assign roles to users
+
+  # Session Management
+  - name: sessions:read
+    label: Read Sessions
+    group: session-management
+    description: View user session information
+    
+  - name: sessions:revoke
+    label: Revoke Sessions
+    group: session-management
+    description: Revoke user sessions
+    
+  - name: sessions:admin
+    label: Session Admin
+    group: session-management
+    description: Full session administration
+
+  # Currency Indexes Management
+  - name: indexes:currencies:create
+    label: Create Currency
+    group: indexes-management
+    description: Create new currencies in the system
+    
+  - name: indexes:currencies:read
+    label: Read Currencies
+    group: indexes-management
+    description: View currency information
+    
+  - name: indexes:currencies:update
+    label: Update Currency
+    group: indexes-management
+    description: Update currency information
+    
+  - name: indexes:currencies:delete
+    label: Delete Currency
+    group: indexes-management
+    description: Delete currencies from the system
+
+  # Currency Relations Management
+  - name: indexes:relations:create
+    label: Create Currency Relation
+    group: indexes-management
+    description: Create new currency relations
+    
+  - name: indexes:relations:read
+    label: Read Currency Relations
+    group: indexes-management
+    description: View currency relations
+    
+  - name: indexes:relations:update
+    label: Update Currency Relation
+    group: indexes-management
+    description: Update currency relations
+    
+  - name: indexes:relations:delete
+    label: Delete Currency Relation
+    group: indexes-management
+    description: Delete currency relations
+
+  # Currency Indexes Values Management
+  - name: indexes:indexes:create
+    label: Create Index Value
+    group: indexes-management
+    description: Add new currency index values
+    
+  - name: indexes:indexes:read
+    label: Read Index Values
+    group: indexes-management
+    description: View currency index values
+    
+  - name: indexes:indexes:update
+    label: Update Index Value
+    group: indexes-management
+    description: Update currency index values
+    
+  - name: indexes:indexes:delete
+    label: Delete Index Value
+    group: indexes-management
+    description: Delete currency index values
+
+  # Currency Conversion Operations
+  - name: indexes:convert
+    label: Convert Currency
+    group: indexes-operations
+    description: Perform currency conversions
+    
+  - name: indexes:path:read
+    label: Read Conversion Path
+    group: indexes-operations
+    description: View conversion paths between currencies
+
+  # Indexes Administration
+  - name: indexes:admin
+    label: Indexes Admin
+    group: indexes-admin
+    description: Full currency indexes administration
+
+  # Mailing System
+  - name: mailing:create
+    label: Create Mail
+    group: mailing-management
+    description: Create and send emails
+    
+  - name: mailing:read
+    label: Read Mail
+    group: mailing-management
+    description: View email information
+    
+  - name: mailing:templates:manage
+    label: Manage Mail Templates
+    group: mailing-management
+    description: Create and manage email templates
+    
+  - name: mailing:admin
+    label: Mailing Admin
+    group: mailing-management
+    description: Full mailing administration

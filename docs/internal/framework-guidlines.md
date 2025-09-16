@@ -1,0 +1,1 @@
+* Everytime I navigate from one tab to another it should query and update that screen info and refresh the auth token.

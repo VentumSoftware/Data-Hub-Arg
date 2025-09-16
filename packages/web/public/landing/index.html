@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>Landing Page</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<style>
+		fixed-login-btn {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 999;
+			padding: 10px 20px;
+			background-color: #ff5722;
+			height: 2rem;
+			width: 8rem;
+			color: #FFECD1 !important;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			text-box: auto;
+		}
+	</style>
+</head>
+
+<body class="is-preload">
+	<button  class="fixed-login-btn" onclick="parent.postMessage({ route: '/sign-in' }, '*')">Login</button>
+	<p style="color: #FFECD1;">This is a landing page</p>
+</body>
+
+</html>

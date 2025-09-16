@@ -1,0 +1,172 @@
+# Sample users with ABAC attributes for development and testing
+# These users demonstrate different attribute combinations
+
+users:
+  # System Administrator
+  - email: admin@ventum.dev
+    firstName: System
+    lastName: Administrator
+    alias: SysAdmin
+    attributes:
+      department: IT
+      level: admin
+      role: admin
+      clearanceLevel: L5
+      region: US
+      specialAccess:
+        - system-admin
+        - user-impersonation
+        - data-export
+    roles:
+      - superadmin
+    groups:
+      - security-team
+    
+  # HR Manager
+  - email: hr.manager@ventum.dev
+    firstName: Sarah
+    lastName: Johnson
+    alias: HR Manager
+    attributes:
+      department: HR
+      level: manager
+      role: manager
+      clearanceLevel: L4
+      region: US
+      specialAccess:
+        - payroll
+        - benefits
+        - employee-records
+    roles:
+      - manager
+    groups:
+      - hr-team
+      - financial-team
+    
+  # Project Manager
+  - email: pm@ventum.dev
+    firstName: Mike
+    lastName: Chen
+    alias: Project Lead
+    attributes:
+      department: Engineering
+      level: manager
+      role: project-manager
+      clearanceLevel: L3
+      region: US
+      projects: [1, 2, 3]
+      specialAccess:
+        - deployment-approve
+        - team-management
+    roles:
+      - manager
+    groups:
+      - beta-users
+    
+  # Security Officer
+  - email: security@ventum.dev
+    firstName: Alex
+    lastName: Rivera
+    alias: SecOps
+    attributes:
+      department: Security
+      level: specialist
+      role: security-officer
+      clearanceLevel: L5
+      region: US
+      specialAccess:
+        - incident-response
+        - threat-investigation
+        - compliance-audit
+    roles:
+      - admin
+    groups:
+      - security-team
+      - compliance-officers
+    
+  # Financial Analyst
+  - email: finance@ventum.dev
+    firstName: Lisa
+    lastName: Park
+    alias: Finance Team
+    attributes:
+      department: Finance
+      level: analyst
+      role: financial-analyst
+      clearanceLevel: L3
+      region: US
+      specialAccess:
+        - financial-reports
+        - budget-analysis
+    roles:
+      - user
+    groups:
+      - financial-team
+      - data-analysts
+    
+  # External Contractor
+  - email: contractor@external.com
+    firstName: John
+    lastName: Smith
+    alias: External Dev
+    attributes:
+      department: External
+      level: contractor
+      role: developer
+      clearanceLevel: L1
+      region: US
+      contractEnd: "2024-12-31"
+      restrictions:
+        - no-pii-access
+        - limited-file-access
+    roles:
+      - user
+    groups:
+      - external-contractors
+    
+  # Regular Employee
+  - email: employee@ventum.dev
+    firstName: Emma
+    lastName: Davis
+    alias: Employee
+    attributes:
+      department: Marketing
+      level: employee
+      role: marketing-specialist
+      clearanceLevel: L2
+      region: US
+    roles:
+      - user
+    groups:
+      - beta-users
+    
+  # Unit Owner (Customer)
+  - email: owner@customer.com
+    firstName: Robert
+    lastName: Wilson
+    alias: Unit Owner
+    attributes:
+      department: Customer
+      level: owner
+      role: unit-owner
+      clearanceLevel: L1
+      region: US
+      ownedUnits: [101, 102]
+      customerSince: "2023-01-15"
+    roles:
+      - owner
+    
+  # Guest User
+  - email: guest@example.com
+    firstName: Guest
+    lastName: User
+    alias: Guest
+    attributes:
+      department: Guest
+      level: guest
+      role: guest
+      clearanceLevel: L0
+      region: US
+      temporary: true
+    roles:
+      - guest

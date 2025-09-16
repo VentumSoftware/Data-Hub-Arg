@@ -1,0 +1,23 @@
+FROM node:18-alpine
+
+# Install development tools
+RUN apk add --no-cache python3 make g++ git
+
+WORKDIR /app
+
+# Copy package files from the api package
+COPY packages/api/package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy necessary config files
+COPY packages/api/drizzle.config.ts ./
+COPY packages/api/drizzle ./drizzle
+COPY packages/api/tsconfig*.json ./
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Start development server with hot-reload
+CMD ["npm", "run", "dev"]

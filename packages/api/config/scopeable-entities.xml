@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scopeableEntities>
+    <!-- Define entities that can be used as permission scopes -->
+    
+    <entity>
+        <type>company</type>
+        <label>Empresa</label>
+        <description>Scope permissions to a specific company</description>
+        <table>companies</table>
+        <idColumn>id</idColumn>
+        <displayColumn>name</displayColumn>
+        <icon>business</icon>
+        <allowedPermissions>
+            <!-- List specific permissions that can be scoped to this entity, or use * for all -->
+            <permission>*</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <entity>
+        <type>project</type>
+        <label>Proyecto</label>
+        <description>Scope permissions to a specific project</description>
+        <table>projects</table>
+        <idColumn>id</idColumn>
+        <displayColumn>name</displayColumn>
+        <icon>apartment</icon>
+        <allowedPermissions>
+            <permission>projects:view</permission>
+            <permission>projects:edit</permission>
+            <permission>projects:delete</permission>
+            <permission>units:create</permission>
+            <permission>units:view</permission>
+            <permission>units:edit</permission>
+            <permission>units:delete</permission>
+            <permission>ownership:manage</permission>
+            <permission>payments:view</permission>
+            <permission>payments:create</permission>
+            <permission>payments:edit</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <entity>
+        <type>functionalUnit</type>
+        <label>Unidad Funcional</label>
+        <description>Scope permissions to a specific functional unit</description>
+        <table>functionalUnits</table>
+        <idColumn>id</idColumn>
+        <displayColumn>unit</displayColumn>
+        <icon>home</icon>
+        <allowedPermissions>
+            <permission>units:view</permission>
+            <permission>units:edit</permission>
+            <permission>units:delete</permission>
+            <permission>ownership:manage</permission>
+            <permission>ownership:transfer</permission>
+            <permission>payments:view</permission>
+            <permission>payments:create</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <entity>
+        <type>userGroup</type>
+        <label>Grupo de Usuarios</label>
+        <description>Scope permissions to a specific user group</description>
+        <table>usersGroups</table>
+        <idColumn>id</idColumn>
+        <displayColumn>name</displayColumn>
+        <icon>group</icon>
+        <allowedPermissions>
+            <permission>groups:view</permission>
+            <permission>groups:edit</permission>
+            <permission>groups:manage-members</permission>
+            <permission>access-control:view</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <entity>
+        <type>department</type>
+        <label>Departamento</label>
+        <description>Scope permissions to a specific department</description>
+        <table>departments</table>
+        <idColumn>id</idColumn>
+        <displayColumn>name</displayColumn>
+        <icon>domain</icon>
+        <allowedPermissions>
+            <permission>*</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <entity>
+        <type>location</type>
+        <label>Ubicación</label>
+        <description>Scope permissions to a specific location or region</description>
+        <table>locations</table>
+        <idColumn>id</idColumn>
+        <displayColumn>name</displayColumn>
+        <icon>location_on</icon>
+        <allowedPermissions>
+            <permission>projects:view</permission>
+            <permission>projects:create</permission>
+            <permission>companies:view</permission>
+        </allowedPermissions>
+    </entity>
+    
+    <!-- Configuration settings -->
+    <settings>
+        <!-- Whether to allow global (unscoped) permissions -->
+        <allowGlobalPermissions>true</allowGlobalPermissions>
+        
+        <!-- Whether to show entity selector for all permissions or only those configured -->
+        <scopeAllPermissions>false</scopeAllPermissions>
+        
+        <!-- Default scope type if none specified -->
+        <defaultScopeType>global</defaultScopeType>
+    </settings>
+</scopeableEntities>

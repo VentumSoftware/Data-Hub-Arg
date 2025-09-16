@@ -1,0 +1,55 @@
+{
+  "templateRepo": "https://github.com/jbnogal-ventum/ventum-framework.git",
+  "syncableFiles": [
+    "scripts/start.js",
+    "scripts/stop.js",
+    "scripts/deploy.js",
+    "scripts/sync-with-template.js",
+    "devops/docker/docker-compose.yml",
+    "devops/docker/docker-compose.production.yml",
+    "devops/docker/docker-compose.staging.yml",
+    "docs/deployment/CI_CD_GUIDE.md",
+    "docs/deployment/GITHUB_DEPLOYMENT.md",
+    ".dockerignore",
+    ".gitignore",
+    ".eslintrc.js",
+    ".prettierrc",
+    "tsconfig.base.json"
+  ],
+  "protectedFiles": [
+    "README.md",
+    ".env",
+    ".env.local",
+    "package.json",
+    "packages/*/package.json",
+    "packages/mobile/app.json",
+    "packages/mobile/App.tsx"
+  ],
+  "syncableDirs": [
+    "scripts",
+    "services/nginx",
+    "services/sftp",
+    "devops/docker"
+  ],
+  "protectedDirs": [
+    ".git",
+    "packages/backend/src/modules/custom",
+    "packages/frontend/src/features/custom",
+    "packages/mobile/src/screens/custom"
+  ],
+  "sharedModules": [
+    "packages/backend/src/modules/auth",
+    "packages/backend/src/modules/users",
+    "packages/backend/src/modules/common",
+    "packages/backend/src/guards",
+    "packages/backend/src/decorators",
+    "packages/frontend/src/components/common",
+    "packages/frontend/src/features/auth",
+    "packages/frontend/src/features/users",
+    "packages/frontend/src/store/slices/authSlice.ts",
+    "packages/frontend/src/store/slices/userSlice.ts",
+    "packages/mobile/src/screens/auth",
+    "packages/mobile/src/screens/users",
+    "packages/mobile/src/components/common"
+  ]
+}

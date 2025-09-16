@@ -1,0 +1,240 @@
+# Hybrid CDC-Outbox Configuration
+# Publishes all CDC tables by default with custom overrides
+
+cdc_outbox:
+  # Global settings
+  config:
+    enabled: true
+    publish_all_cdc_by_default: true  # Auto-publish all CDC tables
+    
+    # Default settings for auto-published tables
+    default_topic: "database.changes"
+    default_routing_pattern: "{table_name}.{operation}"  # users.INSERT, roles.UPDATE, etc.
+    default_priority: normal
+    default_max_retries: 3
+    
+    # Message content defaults
+    include_old_data: true   # Include before/after for all changes
+    include_new_data: true
+    include_metadata: true   # editedBy, editedAt, editedSession
+    
+    # Cleanup and maintenance
+    cleanup_published_after_days: 7
+    batch_size: 100  # Messages per batch for publisher
+    
+  # Opt-out tables (won't publish even if CDC enabled)
+  disabled_tables:
+    - sessions  # Too noisy, sessions change frequently
+    - messageProcessingLog  # Meta-table, don't publish
+    
+  # Custom table configurations (override defaults)
+  table_overrides:
+    # === CRITICAL SECURITY EVENTS ===
+    users:
+      topic: "user.lifecycle"
+      routing:
+        INSERT: "user.created"
+        UPDATE: "user.updated" 
+        DELETE: "user.deleted"
+      priority: high
+      max_retries: 5
+      include_old_data: false  # Privacy - don't include old user data
+      exclude_fields: ["password", "salt", "resetToken"]  # Never include sensitive data
+      
+    # Permission assignments are security-critical
+    permissionsUsersMap:
+      topic: "access.control"
+      routing:
+        INSERT: "user.permission.granted"
+        UPDATE: "user.permission.modified"
+        DELETE: "user.permission.revoked" 
+      priority: critical
+      max_retries: 10
+      
+    usersRolesMap:
+      topic: "access.control"
+      routing:
+        INSERT: "user.role.assigned"
+        UPDATE: "user.role.modified"
+        DELETE: "user.role.removed"
+      priority: critical
+      max_retries: 10
+      
+    permissionsRolesMap:
+      topic: "access.control"
+      routing:
+        INSERT: "role.permission.granted"
+        UPDATE: "role.permission.modified"
+        DELETE: "role.permission.revoked"
+      priority: critical
+      max_retries: 10
+      
+    # === BUSINESS ENTITIES ===
+    roles:
+      topic: "access.management"
+      routing:
+        INSERT: "role.created"
+        UPDATE: "role.updated"
+        DELETE: "role.deleted"
+      priority: high
+      max_retries: 5
+      
+    permissions:
+      topic: "access.management"  
+      routing:
+        INSERT: "permission.created"
+        UPDATE: "permission.updated"
+        DELETE: "permission.deleted"
+      priority: high
+      max_retries: 5
+      
+    usersGroups:
+      topic: "user.groups"
+      routing:
+        INSERT: "group.created"
+        UPDATE: "group.updated"
+        DELETE: "group.deleted"
+      priority: normal
+      
+    usersGroupsMap:
+      topic: "user.groups"
+      routing:
+        INSERT: "user.joined.group"
+        UPDATE: "user.group.membership.updated"
+        DELETE: "user.left.group"
+      priority: normal
+      
+    permissionsGroupsMap:
+      topic: "access.control"
+      routing:
+        INSERT: "group.permission.granted"
+        UPDATE: "group.permission.modified" 
+        DELETE: "group.permission.revoked"
+      priority: high
+      max_retries: 5
+      
+    # === CONTENT & FILES ===
+    fsNodes:
+      topic: "filesystem.events"
+      routing:
+        INSERT: "file.created"
+        UPDATE: "file.updated"
+        DELETE: "file.deleted"
+      priority: low
+      max_retries: 2
+      include_old_data: false  # File content can be large
+      
+    comments:
+      topic: "content.events"
+      routing:
+        INSERT: "comment.created"
+        UPDATE: "comment.updated" 
+        DELETE: "comment.deleted"
+      priority: low
+      max_retries: 2
+
+  # === NON-CDC TABLE PUBLISHING ===
+  # Tables without CDC that still need message publishing
+  non_cdc_tables:
+    # Example: Legacy table without full CDC
+    legacy_logs:
+      enabled: true
+      operations: [INSERT]  # Only new logs
+      topic: "system.logs"
+      routing:
+        INSERT: "log.created"
+      priority: low
+      max_retries: 1
+      trigger_mode: application  # Publish via app code, not DB trigger
+
+  # === QUEUE/TOPIC DEFINITIONS ===
+  topics:
+    "database.changes":
+      description: "Default topic for all CDC changes"
+      partition_key: "table_name"  # Partition by table for ordering
+      dead_letter_queue: "database.changes.dlq"
+      
+    "user.lifecycle":
+      description: "User creation, updates, deletion"
+      partition_key: "aggregate_id"  # Partition by user ID
+      dead_letter_queue: "user.lifecycle.dlq"
+      
+    "access.control":
+      description: "Critical security and permission changes"
+      partition_key: "aggregate_id"
+      dead_letter_queue: "access.control.dlq"
+      retention_hours: 168  # Keep for 7 days
+      
+    "access.management":
+      description: "Role and permission definitions"
+      partition_key: "aggregate_id"
+      dead_letter_queue: "access.management.dlq"
+      
+    "user.groups":
+      description: "User group management"
+      partition_key: "aggregate_id"
+      dead_letter_queue: "user.groups.dlq"
+      
+    "filesystem.events":
+      description: "File system operations"
+      partition_key: "aggregate_id"
+      dead_letter_queue: "filesystem.events.dlq"
+      retention_hours: 24  # Keep for 1 day only
+      
+    "content.events":
+      description: "Comments and content changes"
+      partition_key: "aggregate_id"
+      dead_letter_queue: "content.events.dlq"
+      retention_hours: 72  # Keep for 3 days
+      
+    "system.logs":
+      description: "System logging events"
+      partition_key: "log_level"
+      dead_letter_queue: "system.logs.dlq"
+      retention_hours: 24
+
+  # === MESSAGE PUBLISHER CONFIGURATION ===
+  publisher:
+    # Polling configuration
+    poll_interval_seconds: 5
+    batch_size: 50
+    max_concurrent_batches: 3
+    
+    # Retry configuration
+    retry_backoff_base_seconds: 30  # 30s, 60s, 120s, 240s...
+    retry_backoff_multiplier: 2
+    retry_jitter: true
+    
+    # Health and monitoring
+    health_check_enabled: true
+    metrics_enabled: true
+    log_level: info
+    
+    # Dead letter queue
+    dlq_enabled: true
+    dlq_max_age_hours: 72
+    dlq_alert_threshold: 25  # Alert when DLQ has >25 messages
+
+  # === ADVANCED FEATURES ===
+  advanced:
+    # Message deduplication
+    deduplication:
+      enabled: true
+      window_minutes: 5  # Dedupe within 5-minute window
+      key_fields: ["table_name", "aggregate_id", "operation", "checksum"]
+    
+    # Message transformation
+    transformations:
+      # Remove audit fields from public messages
+      strip_internal_fields: ["editedBy", "editedSession", "editedAt"]
+      # Add standard headers
+      add_headers:
+        schema_version: "1.0"
+        publisher: "ventum-cdc-outbox"
+        
+    # Filtering
+    filters:
+      # Don't publish UPDATE operations where only editedAt changed
+      skip_timestamp_only_updates: true
+      # Don't publish soft deletes as DELETE (they're UPDATEs)
+      treat_soft_delete_as_update: true

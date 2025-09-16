@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+
+# Build outputs (commented out for Docker build)
+# dist
+
+# Tests
+test
+coverage
+*.test.js
+*.spec.js
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+
+# Temporary files
+.tmp
+.temp
+
+# Local uploads (will be mounted as volume)
+uploads

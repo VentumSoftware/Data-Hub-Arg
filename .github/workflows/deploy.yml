@@ -1,0 +1,200 @@
+name: Deploy to Digital Ocean
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+          echo "Deploying to: ${{ steps.env.outputs.environment }}"
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets[format('DO_{0}_HOST', steps.env.outputs.environment)] }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Dev (Docker Compose)
+        if: steps.env.outputs.environment == 'dev'
+        run: |
+          # Create environment file for dev
+          cat > .env.dev << EOF
+          APP_NAME=${{ github.event.repository.name }}-dev
+          NODE_ENV=development
+          
+          # Database (local in Docker)
+          POSTGRES_DB=${{ github.event.repository.name }}_dev
+          POSTGRES_USER=dev_user
+          POSTGRES_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
+          DATABASE_URL=postgresql://dev_user:${{ secrets.DEV_DB_PASSWORD }}@postgres:5432/${{ github.event.repository.name }}_dev
+          
+          # Ports
+          BACKEND_PORT=3000
+          FRONTEND_PORT=5173
+          POSTGRES_PORT=5432
+          
+          # Authentication
+          JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
+          GOOGLE_AUTH_CLIENT_ID=${{ secrets.GOOGLE_AUTH_CLIENT_ID }}
+          GOOGLE_AUTH_CLIENT_SECRET=${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}
+          GOOGLE_AUTH_CALLBACK_URL=http://${{ secrets.DO_DEV_HOST }}:3000/auth/google/callback
+          GOOGLE_AUTH_RETURN_URL=http://${{ secrets.DO_DEV_HOST }}:5173
+          EOF
+          
+          # Copy files to dev server
+          scp -i ~/.ssh/id_rsa .env.dev ${{ secrets.DO_DEV_USER }}@${{ secrets.DO_DEV_HOST }}:~/app/.env
+          scp -i ~/.ssh/id_rsa -r . ${{ secrets.DO_DEV_USER }}@${{ secrets.DO_DEV_HOST }}:~/app/
+          
+          # Deploy with docker-compose
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DO_DEV_USER }}@${{ secrets.DO_DEV_HOST }} << 'ENDSSH'
+            cd ~/app
+            
+            # Pull latest code
+            git pull origin dev || true
+            
+            # Build and start services
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
+            
+            # Run migrations on first deploy
+            if [ ! -f ".initialized" ]; then
+              sleep 10
+              docker-compose exec -T backend npm run migration:push
+              docker-compose exec -T backend npm run audit
+              docker-compose exec -T backend npm run seed
+              touch .initialized
+            fi
+            
+            # Show status
+            docker-compose ps
+          ENDSSH
+
+      - name: Deploy to Staging (Managed DB)
+        if: steps.env.outputs.environment == 'staging'
+        run: |
+          # Create environment file for staging
+          cat > .env.staging << EOF
+          APP_NAME=${{ github.event.repository.name }}-staging
+          NODE_ENV=staging
+          
+          # Database (managed)
+          DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
+          
+          # Ports
+          BACKEND_PORT=3000
+          FRONTEND_PORT=80
+          
+          # Authentication
+          JWT_SECRET=${{ secrets.JWT_SECRET_STAGING }}
+          GOOGLE_AUTH_CLIENT_ID=${{ secrets.GOOGLE_AUTH_CLIENT_ID }}
+          GOOGLE_AUTH_CLIENT_SECRET=${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}
+          GOOGLE_AUTH_CALLBACK_URL=https://${{ secrets.DO_STAGING_HOST }}/auth/google/callback
+          GOOGLE_AUTH_RETURN_URL=https://${{ secrets.DO_STAGING_HOST }}
+          EOF
+          
+          # Copy and deploy
+          scp -i ~/.ssh/id_rsa .env.staging ${{ secrets.DO_STAGING_USER }}@${{ secrets.DO_STAGING_HOST }}:~/app/.env
+          scp -i ~/.ssh/id_rsa -r . ${{ secrets.DO_STAGING_USER }}@${{ secrets.DO_STAGING_HOST }}:~/app/
+          
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DO_STAGING_USER }}@${{ secrets.DO_STAGING_HOST }} << 'ENDSSH'
+            cd ~/app
+            
+            # Use production docker-compose with external DB
+            docker-compose -f docker-compose.staging.yml down
+            docker-compose -f docker-compose.staging.yml build
+            docker-compose -f docker-compose.staging.yml up -d
+            
+            # Run migrations
+            docker-compose -f docker-compose.staging.yml exec -T backend npm run migration:push
+          ENDSSH
+
+      - name: Deploy to Production (Fully Managed)
+        if: steps.env.outputs.environment == 'production'
+        run: |
+          # Create environment file for production
+          cat > .env.production << EOF
+          APP_NAME=${{ github.event.repository.name }}
+          NODE_ENV=production
+          
+          # Database (managed)
+          DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
+          
+          # Authentication
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          GOOGLE_AUTH_CLIENT_ID=${{ secrets.GOOGLE_AUTH_CLIENT_ID }}
+          GOOGLE_AUTH_CLIENT_SECRET=${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}
+          GOOGLE_AUTH_CALLBACK_URL=https://${{ secrets.DO_PRODUCTION_HOST }}/auth/google/callback
+          GOOGLE_AUTH_RETURN_URL=https://${{ secrets.DO_PRODUCTION_HOST }}
+          EOF
+          
+          # Copy and deploy
+          scp -i ~/.ssh/id_rsa .env.production ${{ secrets.DO_PRODUCTION_USER }}@${{ secrets.DO_PRODUCTION_HOST }}:~/app/.env
+          scp -i ~/.ssh/id_rsa -r . ${{ secrets.DO_PRODUCTION_USER }}@${{ secrets.DO_PRODUCTION_HOST }}:~/app/
+          
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DO_PRODUCTION_USER }}@${{ secrets.DO_PRODUCTION_HOST }} << 'ENDSSH'
+            cd ~/app
+            
+            # Use production docker-compose
+            docker-compose -f docker-compose.production.yml down
+            docker-compose -f docker-compose.production.yml build
+            docker-compose -f docker-compose.production.yml up -d
+            
+            # Run migrations
+            docker-compose -f docker-compose.production.yml exec -T backend npm run migration:push
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 30
+          if [[ "${{ steps.env.outputs.environment }}" == "dev" ]]; then
+            curl -f http://${{ secrets.DO_DEV_HOST }}:3000/health || exit 1
+          elif [[ "${{ steps.env.outputs.environment }}" == "staging" ]]; then
+            curl -f https://${{ secrets.DO_STAGING_HOST }}/health || exit 1
+          else
+            curl -f https://${{ secrets.DO_PRODUCTION_HOST }}/health || exit 1
+          fi
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment successful to ${{ steps.env.outputs.environment }}"
+          else
+            echo "❌ Deployment failed to ${{ steps.env.outputs.environment }}"
+          fi

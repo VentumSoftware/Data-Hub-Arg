@@ -183,7 +183,7 @@ const IndexCard: React.FC<{ data: PivotedData }> = ({ data }) => {
           </Typography>
           {data.date > new Date().toISOString().split('T')[0] && (
             <Chip
-              label="Proyectado"
+              label={data.label}
               size="small"
               color="warning"
               variant="outlined"
@@ -1085,7 +1085,7 @@ const Indexes: React.FC = () => {
                       }}
                       key={`${data.date}-${index}`}
                     >
-                      <IndexCard data={data} />
+                      <IndexCard data={{ ...data, label: 'Histórico' }} />
                     </Grid>
                   ))}
                 </Grid>
@@ -1241,62 +1241,73 @@ const Indexes: React.FC = () => {
             return (
               <Card key={index.field} sx={{ mb: 2, p: 2, borderRadius: 1, boxShadow: 'none' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap', }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', width: '160px', flexShrink: 0 }}>
-                    {index.name}
-                  </Typography>
+                  <Grid container spacing={1} alignItems="center" direction={'row'} width={'100%'}>
+                    <Grid size={{ xs: 12, md: 2 }}><Typography variant="subtitle2" sx={{ fontWeight: 'bold', flexShrink: 0 }}>
+                      {index.name}
+                    </Typography>
+                    </Grid>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    Fórmula(v,d,m,y) {'=>'}
-                  </Typography>
+                    <Grid size={{ xs: 12, md: 1.5 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        Fórmula(v,d,m,y) {'=>'}
+                      </Typography>
+                    </Grid>
 
-                  <TextField
-                    size="small"
-                    variant="outlined"
-                    placeholder="Ej: v(0) * (1 + 0.05 * (m / 12))"
-                    value={getDefaultFormula(index.field)}
-                    onChange={(e) => {
-                      updateIndexFormula(index.field, e.target.value);
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        size="small"
+                        variant="outlined"
+                        placeholder="Ej: v(0) * (1 + 0.05 * (m / 12))"
+                        value={getDefaultFormula(index.field)}
+                        onChange={(e) => {
+                          updateIndexFormula(index.field, e.target.value);
 
-                      // Clear existing timeout and use immediate update
-                      if (autoSaveTimeout) {
-                        clearTimeout(autoSaveTimeout);
-                      }
+                          // Clear existing timeout and use immediate update
+                          if (autoSaveTimeout) {
+                            clearTimeout(autoSaveTimeout);
+                          }
 
-                      // Clear projections and trigger recalculation via useEffect
-                      const newTimeout = setTimeout(() => {
-                        setProjectedData([]);
-                      }, 300); // Short delay for UI responsiveness
-                      setAutoSaveTimeout(newTimeout);
-                    }}
-                    error={hasError || false}
-                    sx={{
-                      flexGrow: 1,
-                      //minWidth: '500px', // Wider like before
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          border: '1px solid #ccc',
-                        },
-                      }
-                    }}
-                  />
+                          // Clear projections and trigger recalculation via useEffect
+                          const newTimeout = setTimeout(() => {
+                            setProjectedData([]);
+                          }, 300); // Short delay for UI responsiveness
+                          setAutoSaveTimeout(newTimeout);
+                        }}
+                        error={hasError || false}
+                        sx={{
+                          flexGrow: 1,
+                          width: '100%',
+                          //minWidth: '500px', // Wider like before
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              border: '1px solid #ccc',
+                            },
+                          }
+                        }}
+                      />
+                    </Grid>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    Resultado
-                  </Typography>
+                    <Grid size={{ xs: 5, md: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', flexShrink: 0, textAlign: {xs: 'left', md: 'right'} }}>
+                        Resultado
+                      </Typography>
+                    </Grid>
 
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontFamily: 'monospace',
-                      color: hasError ? 'error.main' : 'success.main',
-                      fontWeight: 'bold',
-                      minWidth: '100px',
-                      textAlign: 'right',
-                      flexShrink: 0
-                    }}
-                  >
-                    {hasError ? 'Error' : (formulaResult || '-')}
-                  </Typography>
+                    <Grid size={{ xs: 7, md: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'monospace',
+                          color: hasError ? 'error.main' : 'success.main',
+                          fontWeight: 'bold',
+                          textAlign: 'right',
+                          flexShrink: 0
+                        }}
+                      >
+                        {hasError ? 'Error' : (formulaResult || '-')}
+                      </Typography>
+                    </Grid>
+                  </Grid>
                 </Box>
 
                 {/* Error message on new line */}
@@ -1365,7 +1376,7 @@ const Indexes: React.FC = () => {
                         }}
                         key={`${data.date}-${index}`}
                       >
-                        <IndexCard data={data} />
+                        <IndexCard data={{ ...data, label: 'Proyectado' }} />
                       </Grid>
                     ))}
                   </Grid>
@@ -1497,7 +1508,7 @@ const Indexes: React.FC = () => {
             </Typography>
 
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Inicio"
@@ -1507,7 +1518,7 @@ const Indexes: React.FC = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Fin"
@@ -1517,7 +1528,7 @@ const Indexes: React.FC = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid size={6}>
+              <Grid size={{xs: 12,md:6}}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
                     Resultado:
@@ -1564,7 +1575,7 @@ const Indexes: React.FC = () => {
             </Typography>
 
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Inicio"
@@ -1574,7 +1585,7 @@ const Indexes: React.FC = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Fin"
@@ -1631,7 +1642,7 @@ const Indexes: React.FC = () => {
             </Typography>
 
             <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Inicio"
@@ -1641,7 +1652,7 @@ const Indexes: React.FC = () => {
                   fullWidth
                 />
               </Grid>
-              <Grid size={3}>
+              <Grid size={{xs: 6,md:3}}>
                 <TextField
                   size="small"
                   label="Fecha Fin"
@@ -1715,7 +1726,7 @@ const Indexes: React.FC = () => {
               </Alert>
 
               <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Valor"
@@ -1726,14 +1737,14 @@ const Indexes: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     select
                     label="Moneda Origen"
                     value={conversionForm.fromCurrencyId}
                     onChange={(e) => setConversionForm(prev => ({ ...prev, fromCurrencyId: e.target.value }))}
-                    sx={{ minWidth: 200 }}
+                    sx={{width: '100%'}}
                   >
                     {currencies?.map((currency) => (
                       <MenuItem key={currency.id} value={currency.id}>
@@ -1743,7 +1754,7 @@ const Indexes: React.FC = () => {
                   </TextField>
                 </Grid>
 
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Fecha Origen"
@@ -1754,7 +1765,7 @@ const Indexes: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     select
@@ -1771,7 +1782,7 @@ const Indexes: React.FC = () => {
                   </TextField>
                 </Grid>
 
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     label="Fecha Destino"
@@ -1782,7 +1793,7 @@ const Indexes: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid size={{ sm: 6, md: 12 }}>
+                <Grid size={12}>
                   <TextField
                     fullWidth
                     select
@@ -1848,7 +1859,7 @@ const Indexes: React.FC = () => {
 
           <Grid container spacing={3}>
             {/* Funciones Básicas */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
@@ -1871,7 +1882,7 @@ const Indexes: React.FC = () => {
             </Grid>
 
             {/* Funciones Trigonométricas */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="secondary">
@@ -1891,7 +1902,7 @@ const Indexes: React.FC = () => {
             </Grid>
 
             {/* Funciones Logarítmicas */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="success.main">
@@ -1910,7 +1921,7 @@ const Indexes: React.FC = () => {
             </Grid>
 
             {/* Funciones Estadísticas */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="warning.main">
@@ -1930,7 +1941,7 @@ const Indexes: React.FC = () => {
             </Grid>
 
             {/* Constantes */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color={mode === 'dark' ? "info" : "info.dark"}>
@@ -1947,7 +1958,7 @@ const Indexes: React.FC = () => {
             </Grid>
 
             {/* Ejemplos de Uso */}
-            <Grid size={{ sm: 6, md: 12 }}>
+            <Grid size={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="error.main">

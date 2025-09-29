@@ -1,3 +1,5 @@
+
+#drizzle/config/cdc-outbox.yml
 # Hybrid CDC-Outbox Configuration
 # Publishes all CDC tables by default with custom overrides
 

@@ -55,7 +55,7 @@ Place your project-specific code in the protected directories:
 ```
 my-project/
 ├── packages/
-│   ├── backend/
+│   ├── api/
 │   │   └── src/
 │   │       └── modules/
 │   │           ├── auth/        # ← From template (synced)
@@ -64,7 +64,7 @@ my-project/
 │   │               ├── products/
 │   │               ├── orders/
 │   │               └── inventory/
-│   └── frontend/
+│   └── web/
 │       └── src/
 │           └── features/
 │               ├── auth/        # ← From template (synced)

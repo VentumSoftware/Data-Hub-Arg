@@ -5,6 +5,7 @@ import authReducer from './reducers/authSlice';
 import navReducer from './reducers/navSlice';
 import usersSlice from '../pages/dashboard/users/UsersSlice';
 import filesSlice from '../pages/dashboard/files/FilesSlices';
+import indexesSlice from '../pages/indexes/indexesSlice';
 import { authPersistConfig } from './persistConfig';
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 
@@ -16,6 +17,7 @@ export const store = configureStore({
     nav: navReducer,
     users: usersSlice,
     files: filesSlice,
+    indexes: indexesSlice
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({
     serializableCheck: false // Desactivar temporalmente para pruebas

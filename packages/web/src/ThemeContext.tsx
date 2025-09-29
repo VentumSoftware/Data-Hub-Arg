@@ -20,7 +20,7 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useThemeContext = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mode, setMode] = useState<ColorMode>('dark');
+  const [mode, setMode] = useState<ColorMode>('light');
   const dispatch = useDispatch<AppDispatch>();
   const fetched = null // useSelector((state: RootState) => state.myCompany.fetched);
   //const template = useSelector((state: RootState) => state.myCompany.data?.company?.template);

@@ -29,7 +29,7 @@ export const users = pgTable('users', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const sessions = pgTable('sessions', {
@@ -70,7 +70,7 @@ export const roles = pgTable('roles', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const permissionsRolesMap = pgTable('permissionsRolesMap', {
@@ -84,7 +84,7 @@ export const permissionsRolesMap = pgTable('permissionsRolesMap', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.permissionId, table.roleId] }),
@@ -102,7 +102,7 @@ export const permissionsUsersMap = pgTable('permissionsUsersMap', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.permissionId, table.userId] }),
@@ -120,7 +120,7 @@ export const usersRolesMap = pgTable('usersRolesMap', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.userId, table.roleId] }),
@@ -134,7 +134,7 @@ export const usersGroups = pgTable('usersGroups', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const usersGroupsMap = pgTable('usersGroupsMap', {
@@ -144,7 +144,7 @@ export const usersGroupsMap = pgTable('usersGroupsMap', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.userId, table.usersGroupId] }),
@@ -162,7 +162,7 @@ export const permissionsGroupsMap = pgTable('permissionsGroupsMap', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.permissionId, table.usersGroupId] }),
@@ -208,7 +208,7 @@ export const comments = pgTable('comments', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const fsNodes = pgTable('fsNodes', {
@@ -234,7 +234,7 @@ export const fsNodes = pgTable('fsNodes', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const groups = pgTable('groups', {
@@ -248,7 +248,7 @@ export const groups = pgTable('groups', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 });
 
 export const groupMemberships = pgTable('groupMemberships', {
@@ -260,7 +260,7 @@ export const groupMemberships = pgTable('groupMemberships', {
     isDeleted: boolean('is_deleted').notNull().default(false),
     editedAt: timestamp('edited_at').notNull().defaultNow(),
     editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID).references(() => users.id, { onDelete: 'cascade' }),
-    editedSession: varchar('edited_session'),
+    editedSession: varchar('edited_session', { length: 255 }),
 }, (table) => {
     return {
         pk: primaryKey({ columns: [table.groupId, table.memberType, table.memberId] }),
@@ -268,4 +268,45 @@ export const groupMemberships = pgTable('groupMemberships', {
 });
 
 // ------------------------------- APP SCHEMA -------------------------------
+
+
+export const currencies = pgTable('currencies', {
+    id: serial('id').primaryKey(),
+    code: varchar('code', { length: 50 }).notNull().unique(), // e.g., 'peso:arg', 'dolar:usa'
+    label: varchar('label', { length: 100 }).notNull(),
+    symbol: varchar('symbol', { length: 50 }).notNull(),
+
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    editedAt: timestamp('edited_at').notNull().defaultNow(),
+    editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID),
+    editedSession: varchar('edited_session', { length: 255 }),
+});
+
+export const currencyRelationOpEnum = pgEnum('currency_relation_op', ['direct', 'inverse', 'both']);
+
+export const currenciesRelations = pgTable('currenciesRelations', {
+    id: serial('id').primaryKey(),
+    dividendId: integer('dividend_id').notNull().references(() => currencies.id, { onDelete: 'cascade' }),
+    divisorId: integer('divisor_id').notNull().references(() => currencies.id, { onDelete: 'cascade' }),
+    op: currencyRelationOpEnum('op').notNull(),
+    source: varchar('source', { length: 2083 }), // URL to get the index
+
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    editedAt: timestamp('edited_at').notNull().defaultNow(),
+    editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID),
+    editedSession: varchar('edited_session', { length: 255 }),
+});
+
+export const currencyIndexes = pgTable('currencyIndexes', {
+    id: serial('id').primaryKey(),
+    date: date('date').notNull(),
+    currenciesRelationsId: integer('currencies_relations_id').notNull().references(() => currenciesRelations.id, { onDelete: 'cascade' }),
+    value: real('value').notNull(),
+
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    editedAt: timestamp('edited_at').notNull().defaultNow(),
+    editedBy: integer('edited_by').notNull().default(SYSTEM_USER_ID),
+    editedSession: varchar('edited_session', { length: 255 }),
+});
+
 

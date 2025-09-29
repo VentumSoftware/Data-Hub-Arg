@@ -2,7 +2,7 @@
  * SIMPLE EXAMPLE: Message Consumer Usage
  * See docs/messaging/cdc-outbox-system.md for detailed documentation
  */
-
+// packages/api/src/messaging/example-usage.ts
 import { MessageConsumer, ConsumedMessage } from './message-consumer';
 import { logger } from '../utils/logger';
 

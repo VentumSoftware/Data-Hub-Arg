@@ -1,3 +1,4 @@
+#drizzle/config/audit-tables.yml
 audit:
   # CDC Table Configuration
   config:

@@ -35,21 +35,25 @@ interface CDCOutboxConfig {
 
 interface CDCMessage {
   id: number;
-  table_name: string;
-  operation: string;
-  message_id: string;
-  topic: string;
-  routing_key: string;
-  old_data: any;
-  new_data: any;
-  message_status: string;
-  message_priority: string;
-  retry_count: number;
-  max_retries: number;
-  correlation_id: string;
+ // table_name: string;
+ _cdc_operation: string;
+ _cdc_acknowledge: boolean;
+ _cdc_timestamp: Date;
+ is_deleted: boolean;
+//   message_id: string;
+//   topic: string;
+//   routing_key: string;
+//   old_data: any;
+//   new_data: any;
+//  // message_priority: string;
+//   retry_count: number;
+//   max_retries: number;
+//   correlation_id: string;
+
   editedBy?: number;
   editedAt?: Date;
   editedSession?: string;
+  [key: string]: any;
 }
 
 export class CDCOutboxPublisher {
@@ -221,9 +225,10 @@ export class CDCOutboxPublisher {
     }
     
     try {
+      console.log('Before fetchPendingMessages', tableName);
       // Fetch pending messages
       const messages = await this.fetchPendingMessages(tableName);
-      
+      console.log('After fetchPendingMessages', messages, tableName);
       if (messages.length === 0) {
         return;
       }
@@ -232,6 +237,7 @@ export class CDCOutboxPublisher {
       
       // Process each message
       for (const message of messages) {
+        console.log('message', message);
         await this.processMessage(tableName, message);
       }
       
@@ -243,19 +249,8 @@ export class CDCOutboxPublisher {
   private async fetchPendingMessages(tableName: string): Promise<CDCMessage[]> {
     const query = sql`
       SELECT * FROM ${sql.identifier(tableName)}
-      WHERE message_status IN ('pending', 'failed')
-      AND (
-        message_status = 'pending' 
-        OR (message_status = 'failed' AND next_retry_at <= NOW())
-      )
-      ORDER BY 
-        CASE message_priority
-          WHEN 'critical' THEN 1
-          WHEN 'high' THEN 2
-          WHEN 'normal' THEN 3
-          WHEN 'low' THEN 4
-        END,
-        message_created_at
+      WHERE _cdc_acknowledge = false
+      ORDER BY _cdc_timestamp ASC
       LIMIT ${this.config.cdc_outbox.publisher.batch_size}
       FOR UPDATE SKIP LOCKED
     `;
@@ -265,83 +260,53 @@ export class CDCOutboxPublisher {
   }
 
   private async processMessage(tableName: string, message: CDCMessage) {
-    const startTime = Date.now();
+  const baseTableName = tableName.substring(5);
+  
+  try {
+    // Generar metadatos de mensajería dinámicamente
+    const topic = this.config.cdc_outbox.config.default_topic;
+    const routingKey = `${baseTableName}.${message._cdc_operation}`;
+    const messageId = `cdc_${tableName}_${message.id}_${Date.now()}`;
     
-    try {
-      // Mark as processing
-      await this.updateMessageStatus(tableName, message.id, 'processing');
-      
-      // Prepare message payload
-      const payload = this.prepareMessagePayload(tableName, message);
-      
-      // Publish with retry
-      await pRetry(
-        async () => {
-          await this.queueManager.publish(
-            message.topic,
-            message.routing_key,
-            payload,
-            {
-              messageId: message.message_id,
-              correlationId: message.correlation_id,
-              priority: message.message_priority,
-            }
-          );
-        },
-        {
-          retries: 2,
-          minTimeout: 1000,
-          maxTimeout: 5000,
-        }
-      );
-      
-      // Mark as published
-      await this.updateMessageStatus(tableName, message.id, 'published', {
-        publishedAt: new Date(),
-        processingTimeMs: Date.now() - startTime,
-      });
-      
-      this.logger.debug(`Published message ${message.message_id} to ${message.topic}/${message.routing_key}`);
-      
-    } catch (error) {
-      await this.handleMessageError(tableName, message, error as Error, Date.now() - startTime);
-    }
+    const payload = this.prepareMessagePayload(tableName, message);
+    
+    // Publicar a RabbitMQ
+    await this.queueManager.publish(topic, routingKey, payload, {
+      messageId: messageId,
+      priority: 'normal',
+    });
+    
+    // Marcar como procesado
+    //await this.markMessageAsAcknowledged(tableName, message.id);
+    
+    this.logger.debug(`Published ${baseTableName}.${message._cdc_operation} message ${messageId}`);
+    
+  } catch (error) {
+    this.logger.error({ error }, `Failed to process message from ${tableName}`);
   }
+}
 
-  private prepareMessagePayload(tableName: string, message: CDCMessage): any {
-    const baseTableName = tableName.substring(5);
-    const config = this.config.cdc_outbox.table_overrides[baseTableName] || {};
-    
-    // Build payload
-    const payload: any = {
-      id: message.message_id,
-      source: 'cdc-outbox',
-      type: `${baseTableName}.${message.operation}`,
-      timestamp: new Date().toISOString(),
-      correlationId: message.correlation_id,
-      data: {
-        table: baseTableName,
-        operation: message.operation,
-        id: message.new_data?.id || message.old_data?.id,
-      },
-      metadata: {
-        editedBy: message.editedBy,
-        editedAt: message.editedAt,
-        editedSession: message.editedSession,
-      },
-    };
-    
-    // Include data based on configuration
-    if (config.include_old_data !== false && message.old_data) {
-      payload.data.before = this.filterSensitiveFields(message.old_data, config.exclude_fields);
-    }
-    
-    if (config.include_new_data !== false && message.new_data) {
-      payload.data.after = this.filterSensitiveFields(message.new_data, config.exclude_fields);
-    }
-    
-    return payload;
-  }
+private prepareMessagePayload(tableName: string, message: CDCMessage): any {
+  const baseTableName = tableName.substring(5); // quita '_cdc_'
+  
+  // Crear copia sin campos técnicos de CDC
+  const { _cdc_operation, _cdc_acknowledge, _cdc_timestamp, is_deleted, ...rowData } = message;
+  
+  return {
+    id: message.id,
+    source: 'cdc-outbox',
+    type: `${baseTableName}.${_cdc_operation}`,
+    timestamp: new Date().toISOString(),
+    table: baseTableName,
+    operation: _cdc_operation,
+    data: rowData,  // Todos los datos de la fila original
+    metadata: {
+      editedBy: message.editedBy,
+      editedAt: message.editedAt,
+      editedSession: message.editedSession,
+    },
+  };
+}
 
   private filterSensitiveFields(data: any, excludeFields: string[] = []): any {
     if (!data || excludeFields.length === 0) {
@@ -356,25 +321,25 @@ export class CDCOutboxPublisher {
     return filtered;
   }
 
-  private async updateMessageStatus(
-    tableName: string,
-    messageId: number,
-    status: string,
-    additionalFields: Record<string, any> = {}
-  ) {
-    const updates = Object.entries({
-      message_status: status,
-      ...additionalFields,
-    })
-      .map(([key, value]) => `${key} = ${this.formatValue(value)}`)
-      .join(', ');
+  // private async updateMessageStatus(
+  //   tableName: string,
+  //   messageId: number,
+  //   status: string,
+  //   additionalFields: Record<string, any> = {}
+  // ) {
+  //   const updates = Object.entries({
+  //     _cdc_acknowledge: status,
+  //     ...additionalFields,
+  //   })
+  //     .map(([key, value]) => `${key} = ${this.formatValue(value)}`)
+  //     .join(', ');
     
-    await this.db.execute(sql`
-      UPDATE ${sql.identifier(tableName)}
-      SET ${sql.raw(updates)}
-      WHERE id = ${messageId}
-    `);
-  }
+  //   await this.db.execute(sql`
+  //     UPDATE ${sql.identifier(tableName)}
+  //     SET ${sql.raw(updates)}
+  //     WHERE id = ${messageId}
+  //   `);
+  // }
 
   private formatValue(value: any): string {
     if (value === null) return 'NULL';
@@ -407,22 +372,22 @@ export class CDCOutboxPublisher {
       
       const nextRetryAt = new Date(Date.now() + backoffSeconds * 1000);
       
-      await this.updateMessageStatus(tableName, message.id, 'failed', {
-        retry_count: newRetryCount,
-        next_retry_at: nextRetryAt,
-        failed_at: new Date(),
-        last_error: error.message,
-      });
+      // await this.updateMessageStatus(tableName, message.id, 'failed', {
+      //   retry_count: newRetryCount,
+      //   next_retry_at: nextRetryAt,
+      //   failed_at: new Date(),
+      //   last_error: error.message,
+      // });
     } else {
       // Mark as dead
-      await this.updateMessageStatus(tableName, message.id, 'dead', {
-        retry_count: newRetryCount,
-        failed_at: new Date(),
-        last_error: error.message,
-      });
+      // await this.updateMessageStatus(tableName, message.id, 'dead', {
+      //   retry_count: newRetryCount,
+      //   failed_at: new Date(),
+      //   last_error: error.message,
+      // });
       
       // Send to DLQ if configured
-      await this.sendToDeadLetterQueue(message, error);
+      //await this.sendToDeadLetterQueue(message, error);
     }
   }
 

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { me } from "./store/reducers/authSlice";
 import { AppDispatch, RootState } from './store';
 import SignIn from './pages/signIn/SignIn';
-
+import Indexes from './pages/indexes/Indexes';
 import Landing from './pages/landing/Landing';
 import Dashboard from './pages/dashboard/Dashboard';
 import AuthWrapper from './pages/dashboard/AuthWrapper';
@@ -15,21 +15,13 @@ import Error from './pages/placeholders/Error';
 import './App.css';
 
 const App = () => {
-  const dispatch: AppDispatch = useDispatch();
-  const { data } = useSelector((state: RootState) => state.auth);
-
-  useEffect(() => {
-    // Solo verifica autenticación si no hay datos de usuario
-    if (!data.user) {
-      dispatch(me());
-    }
-  }, [dispatch, data.user]);
-
+ 
 
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/indices/*" element={<Indexes />} />
       <Route path="/dashboard" element={<AuthWrapper><Dashboard /></AuthWrapper>}>
         <Route index element={<Users />} />
         <Route path="usuarios/*" element={<Users />} />

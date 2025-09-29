@@ -1,0 +1,78 @@
+# Application-specific currencies
+
+currencies:
+  # Company Management
+  - code: cpi
+    label: CPI
+    symbol: CPI
+    
+  - code: peso
+    label: Peso
+    symbol: 'peso:arg'
+  
+  - code: cac
+    label: CAC
+    symbol: cac
+  
+  - code: uva
+    label: UVA
+    symbol: uva
+
+  - code: dolar_oficial_compra
+    label: Dolar Oficial Compra
+    symbol: dolar:oficial:compra
+    
+  - code: dolar_oficial_venta
+    label: Dolar Oficial Venta
+    symbol: dolar:oficial:venta
+
+  # Project Management
+  - code: dolar_blue_compra
+    label: Dolar Blue Compra
+    symbol: dolar:blue:compra
+    
+  - code: dolar_blue_venta
+    label: Dolar Blue Venta
+    symbol: dolar:blue:venta
+    
+  - code: dolar_mep_compra
+    label: Dolar MEP Compra
+    symbol: dolar:bolsa:Compra
+    
+  - code: dolar_mep_venta
+    label: Dolar MEP Venta
+    symbol: dolar:bolsa:venta
+    
+  - code: dolar_ccl_compra
+    label: Dolar CCL Compra
+    symbol: contado:con:liqui:compra
+    
+  - code: dolar_ccl_venta
+    label: Dolar CCL Venta
+    symbol: contado:con:liqui:venta
+
+  - code: dolar_mayorista_compra
+    label: Dolar Mayorista Compra
+    symbol: dolar:mayorista:compra
+    
+  - code: dolar_mayorista_venta
+    label: Dolar Mayorista Venta
+    symbol: dolar:mayorista:venta
+    
+  - code: dolar_cripto_compra
+    label: Dolar Cripto Compra
+    symbol: dolar:cripto:compra
+    
+  - code: dolar_cripto_venta
+    label: Dolar Cripto Venta
+    symbol: dolar:cripto:venta
+    
+  - code: dolar_tarjeta_compra
+    label: Dolar Tarjeta Compra
+    symbol: dolar:tarjeta:compra
+    
+  - code: dolar_tarjeta_venta
+    label: Dolar Tarjeta Venta
+    symbol: dolar:tarjeta:venta
+    
+  

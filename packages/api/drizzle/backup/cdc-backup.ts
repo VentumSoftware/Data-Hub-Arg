@@ -1,3 +1,4 @@
+// packages/api/drizzle/backup/cdc-backup.ts
 import { config } from 'dotenv';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -125,7 +126,7 @@ export class CDCBackup {
     const execAsync = util.promisify(exec);
 
     try {
-      const command = `docker exec ${process.env.APP_NAME || 'app'}-postgres psql -U ${process.env.POSTGRES_USER || 'app_user'} -d ${process.env.POSTGRES_DB || 'app_local'} -t -c "SELECT tablename FROM pg_tables WHERE tablename LIKE '${this.auditConfig.audit.config.prefix}%' ORDER BY tablename;"`;
+      const command = `docker exec ${process.env.APP_NAME || 'app'}-postgres-dev psql -U ${process.env.POSTGRES_USER || 'app_user'} -d ${process.env.POSTGRES_DB || 'app_local'} -t -c "SELECT tablename FROM pg_tables WHERE tablename LIKE '${this.auditConfig.audit.config.prefix}%' ORDER BY tablename;"`;
       
       const { stdout } = await execAsync(command);
       const tables = stdout

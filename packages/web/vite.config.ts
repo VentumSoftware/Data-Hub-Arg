@@ -6,11 +6,11 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // In Docker, environment variables are passed directly via process.env
   const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') }
-  
+
   // Check if we're running on Windows or if polling is explicitly enabled
   const isWindows = process.platform === 'win32'
   const usePolling = env.VITE_USE_POLLING === 'true' || isWindows
-  
+
   return {
     plugins: [
       react(),
@@ -29,6 +29,9 @@ export default defineConfig(({ mode }) => {
       }
     ],
     base: './',
+    resolve: {
+      dedupe: ['react', 'react-dom'] // Forza la deduplicación
+    },
     server: {
       host: env.VITE_HOST || '0.0.0.0',
       port: parseInt(env.VITE_PORT || '5173'),

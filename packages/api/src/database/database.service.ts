@@ -31,7 +31,7 @@ interface AuditConfig {
     }>;
   };
 }
-
+console.log('process.env.DATABASE_URL', process.env.DATABASE_URL)
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   private auditConfig: AuditConfig;
@@ -44,13 +44,13 @@ export class DatabaseService implements OnModuleDestroy {
     this.loadAuditConfig();
   }
 
-  private pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://app_user:app_password@localhost:5432/app_local' });
+  private pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://app_user:app_password@postgres:5432/app_main' });
   public readonly db = drizzle<typeof schema>(this.pool, { 
     schema,
     logger: {
       logQuery: (query, params) => {
-        console.log('📊 SQL Query:', query);
-        console.log('📊 Parameters:', params);
+        //console.log('📊 SQL Query:', query);
+        //console.log('📊 Parameters:', params);
         
         // Check for UUID being passed to integer parameter
         if (params && params.some(p => typeof p === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p))) {

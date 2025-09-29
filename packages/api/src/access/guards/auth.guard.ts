@@ -4,6 +4,8 @@ import { Request } from 'express';
 import { DatabaseService } from '../../database/database.service';
 import { eq, and, sql, inArray, desc, isNull } from 'drizzle-orm';
 import { SessionConfig } from '../config/session.config';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -17,7 +19,8 @@ export class AuthGuard implements CanActivate {
   private usersGroupsMap
   private permissionsRolesMap
   constructor(
-    private databaseService: DatabaseService
+    private databaseService: DatabaseService,
+    private reflector: Reflector // Asegúrate de que esté inyectado
   ) {
     this.db = this.databaseService.db;
     const { users, sessions, roles, usersRolesMap, permissions, usersGroups, usersGroupsMap, permissionsRolesMap } = this.databaseService.schema;
@@ -96,6 +99,17 @@ export class AuthGuard implements CanActivate {
       }
     }
     const req = context.switchToHttp().getRequest<Request>();
+
+    // Usar la clave constante del decorador
+       // ✅ Si ya fue bypassed por TokenAuthGuard, permitir acceso
+    if (req['bypassedByToken'] === true) {
+      return true;
+    }
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(),]);
+    console.log('🔍 isPublic metadata:', isPublic);
+    if (isPublic) {
+      return true;
+    }
     const token = req.cookies?.token || req.headers['authorization']?.replace('Bearer ', '');
 
     if (!token) {

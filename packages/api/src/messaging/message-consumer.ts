@@ -1,3 +1,4 @@
+// packages/api/src/messaging/message-consumer.ts
 import * as amqp from 'amqplib';
 import { EventEmitter } from 'events';
 import { Logger } from 'pino';
@@ -80,31 +81,56 @@ export class MessageConsumer extends EventEmitter {
     }
   }
 
-  async consume(queueName: string): Promise<void> {
-    if (!this.connected || !this.channel) {
-      throw new Error('Must connect before consuming');
-    }
-
-    try {
-      // IMPORTANT: noAck: false means manual acknowledgment mode
-      const consumerResult = await this.channel.consume(
-        queueName,
-        (msg) => this.handleMessageWithACK(msg),
-        { 
-          noAck: false  // MANUAL ACK MODE - messages stay in queue until ACKed
-        }
-      );
-
-      if (consumerResult) {
-        this.consumerTags.push(consumerResult.consumerTag);
-        this.logger.info(`Started consuming from queue: ${queueName} with manual ACK`);
-      }
-
-    } catch (error) {
-      this.logger.error(error, `Failed to start consuming from ${queueName}`);
-      throw error;
-    }
+async consume(queueName: string): Promise<void> {
+  if (!this.connected || !this.channel) {
+    throw new Error('Must connect before consuming');
   }
+
+  try {
+    // ✅ PRIMERO: Crear el exchange si no existe
+    await this.channel.assertExchange('database.changes', 'topic', {
+      durable: true,
+      autoDelete: false,
+    });
+
+    // ✅ SEGUNDO: Crear la cola si no existe
+    await this.channel.assertQueue(queueName, {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': `${queueName}.dlx`,
+      },
+    });
+
+    // ✅ TERCERO: Crear el binding con el exchange
+    await this.channel.bindQueue(queueName, 'database.changes', '#');
+
+    // ✅ CUARTO: Crear DLQ si no existe
+    const dlqExchange = `${queueName}.dlx`;
+    const dlqName = `${queueName}.dlq`;
+    
+    await this.channel.assertExchange(dlqExchange, 'topic', { durable: true });
+    await this.channel.assertQueue(dlqName, { durable: true });
+    await this.channel.bindQueue(dlqName, dlqExchange, '#');
+
+    // ✅ QUINTO: Ahora sí consumir
+    const consumerResult = await this.channel.consume(
+      queueName,
+      (msg) => this.handleMessageWithACK(msg),
+      { 
+        noAck: false
+      }
+    );
+
+    if (consumerResult) {
+      this.consumerTags.push(consumerResult.consumerTag);
+      this.logger.info(`Started consuming from queue: ${queueName} with manual ACK`);
+    }
+
+  } catch (error) {
+    this.logger.error(error, `Failed to start consuming from ${queueName}`);
+    throw error;
+  }
+}
 
   /**
    * DETAILED ACK IMPLEMENTATION

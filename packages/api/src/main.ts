@@ -11,10 +11,10 @@ config({ override: true });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Trust proxy to get real IP addresses when behind nginx/load balancer
   app.getHttpAdapter().getInstance().set('trust proxy', true);
-  
+
   // Global exception filter for consistent error responses
   app.useGlobalFilters(new AllExceptionsFilter());
 
@@ -41,7 +41,7 @@ async function bootstrap() {
         callback(null, true);
         return;
       }
-      
+
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -57,12 +57,12 @@ async function bootstrap() {
 
   // Middleware setup
   app.use(cookieParser(process.env.COOKIE_SECRET || 'supersecret'));
-  app.useGlobalPipes(new ValidationPipe({ 
-    whitelist: true, 
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
     transform: true,
     forbidNonWhitelisted: true,
   }));
-  
+
   // API prefix for all routes
   app.setGlobalPrefix('api');
 
@@ -85,8 +85,16 @@ async function bootstrap() {
   // Start server
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  
+
   console.log(`🚀 Application is running on: http://localhost:${port}/api`);
   console.log(`📚 API documentation available at: http://localhost:${port}/api/docs`);
+  console.log(`📝 Environment variables for PSQ: `, {
+    POSTGRES_DB: process.env.POSTGRES_DB,
+    POSTGRES_USER: process.env.POSTGRES_USER,
+    POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+    POSTGRES_PORT: process.env.POSTGRES_PORT,
+    POSTGRES_HOST: process.env.POSTGRES_HOST,
+    DATABASE_URL: process.env.DATABASE_URL
+  });
 }
 bootstrap();

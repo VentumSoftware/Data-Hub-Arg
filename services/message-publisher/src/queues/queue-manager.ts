@@ -1,3 +1,4 @@
+// services/message-publisher/src/queues/queue-manager.ts
 import { EventEmitter } from 'events';
 import { createLogger } from '../utils/logger';
 
@@ -59,6 +60,7 @@ export class QueueManager extends EventEmitter {
     }
 
     try {
+      this.logger.debug(`Publishing message to ${topic}/${routingKey}`);
       await this.provider.publish(topic, routingKey, payload, options);
       this.emit('message:published', { topic, routingKey, messageId: options?.messageId });
     } catch (error) {

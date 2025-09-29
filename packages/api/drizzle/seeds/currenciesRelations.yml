@@ -1,0 +1,74 @@
+currenciesRelations:
+  # File System - Read Operations
+  - divisor: peso
+    dividend: cpi
+    op: both
+    
+  - divisor: dolar_mep_compra
+    dividend: cpi
+    op: both
+    
+
+  - divisor: cac
+    dividend: peso
+    op: both
+    
+  - divisor: uva
+    dividend: peso
+    op: both
+
+  - divisor: dolar_oficial_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_oficial_venta
+    dividend: peso
+    op: direct
+
+  - divisor: dolar_blue_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_blue_venta
+    dividend: peso
+    op: direct
+
+  - divisor: dolar_mep_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_mep_venta
+    dividend: peso
+    op: direct  
+
+  - divisor: dolar_cripto_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_cripto_venta
+    dividend: peso
+    op: direct
+
+  - divisor: dolar_tarjeta_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_tarjeta_venta
+    dividend: peso
+    op: direct
+
+  - divisor: dolar_ccl_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_ccl_venta
+    dividend: peso
+    op: direct
+
+  - divisor: dolar_mayorista_compra
+    dividend: peso
+    op: inverse
+    
+  - divisor: dolar_mayorista_venta
+    dividend: peso
+    op: direct

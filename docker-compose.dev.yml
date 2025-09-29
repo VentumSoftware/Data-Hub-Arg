@@ -10,18 +10,18 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5433:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     networks:
       - app-network-dev
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # healthcheck:
+    #   test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}" ]
+    #   interval: 1000000s
+    #   timeout: 5s
+    #   retries: 5
 
   # API Service with hot-reload
   api:
@@ -36,14 +36,15 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-app_main}
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password} # Application configuration
+ 
       APP_NAME: ${APP_NAME:-app}
       COOKIE_SECRET: ${COOKIE_SECRET:-your-cookie-secret-here-change-in-production}
       SESSION_EXPIRATION_MINUTES: ${SESSION_EXPIRATION_MINUTES:-120}
       GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
       GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
       GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL:-http://localhost:3000/api/access/google/redirect}
-      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL:-http://localhost:5173}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL:-http://localhost:5173} # System user configuration
       SYSTEM_USER_EMAIL: ${SYSTEM_USER_EMAIL:-system@template.com}
       SYSTEM_USER_ALIAS: ${SYSTEM_USER_ALIAS:-System}
       SYSTEM_USER_FIRST_NAME: ${SYSTEM_USER_FIRST_NAME:-System}
@@ -57,9 +58,10 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_REQUESTS: ${LOG_REQUESTS:-false}
       CORS_ORIGIN: ${CORS_ORIGIN}
+      AUTH_TOKEN: ${AUTH_TOKEN}
     ports:
       - "${API_PORT:-3000}:3000"
-      - "9229:9229"  # Node.js debugging port
+      - "9229:9229" # Node.js debugging port
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,7 +78,7 @@ services:
       - ./packages/shared:/app/shared
       # Prevent node_modules from being overwritten
       - api_node_modules:/app/node_modules
-      - ./packages/api/uploads:/app/uploads
+      - ./packages/api/upload:/app/upload
     command: npm run dev
 
   # Web Application with hot-reload
@@ -92,7 +94,7 @@ services:
       - VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN:-localhost}
       - VITE_PLAUSIBLE_URL=${VITE_PLAUSIBLE_URL:-http://localhost:8000}
       - VITE_SITE_NAME=${VITE_SITE_NAME:-My App}
-      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes in Docker
+      - CHOKIDAR_USEPOLLING=true # Enable polling for file changes in Docker
       - WATCHPACK_POLLING=true
     ports:
       - "${WEB_PORT:-5173}:5173"
@@ -157,19 +159,16 @@ services:
 
   # SFTP Server
   sftp:
-    image: atmoz/sftp:latest
+    image: atmoz/sftp:alpine
     container_name: ${APP_NAME:-app}-sftp-dev
-    environment:
-      SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
     ports:
       - "${SFTP_PORT:-2222}:22"
     volumes:
-      - sftp_dev_data:/home/${SFTP_USERNAME:-app_user}/upload
+      - sftp_dev_data:/home/app_user/upload
+    command: ["app_user:app_sftp_password:1001:1001"]
     networks:
       - app-network-dev
     restart: unless-stopped
-
-  # OpenSearch for logging
   opensearch:
     image: opensearchproject/opensearch:2.11.1
     container_name: ${APP_NAME:-app}-opensearch-dev
@@ -193,11 +192,10 @@ services:
       - app-network-dev
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
-
   # OpenSearch Dashboards for log visualization
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.11.1
@@ -229,7 +227,7 @@ services:
       - app-network-dev
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -248,11 +246,10 @@ services:
       - app-network-dev
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U plausible"]
+      test: [ "CMD-SHELL", "pg_isready -U plausible" ]
       interval: 10s
       timeout: 5s
       retries: 5
-
 
   # Plausible Analytics
   plausible:
@@ -292,6 +289,8 @@ volumes:
   rabbitmq_dev_data:
     driver: local
   sftp_dev_data:
+    driver: local
+  sftp_host_keys:
     driver: local
   opensearch_dev_data:
     driver: local

@@ -11,7 +11,7 @@ export const getTheme = (mode: 'light' | 'dark', primaryColor?: any): Theme =>
   createTheme({
     typography: {
       pxToRem: (size: number) => `${size / 16}rem`,
-      "fontFamily": "'Montserrat', sans-serif",
+      "fontFamily": "'Rubik', sans-serif",
       "fontSize": 14,
       "fontWeightLight": 300,
       "fontWeightRegular": 400,
@@ -23,7 +23,7 @@ export const getTheme = (mode: 'light' | 'dark', primaryColor?: any): Theme =>
         main: primaryColor?.main || '#FF7D00',
         light: lighten(primaryColor?.main||'#FF7D00', 0.3) ,
         dark: darken(primaryColor?.main||'#FF7D00', 0.3),
-        contrastText: primaryColor?.contrastText || '#FFECD1',
+        contrastText: primaryColor?.contrastText || '#fff3e2ff',
       },
       secondary: {
         main: '#15616D',
@@ -33,8 +33,8 @@ export const getTheme = (mode: 'light' | 'dark', primaryColor?: any): Theme =>
       },
       info: {
         main: '#287580',
-        light: '#074F59',
-        dark: '#0073AC',
+        light: '#E6EDEE',
+        dark: '#010d38ff',
         contrastText: '#FFECD1',
       },
       success: {

@@ -1,7 +1,31 @@
 FROM node:18-alpine
 
-# Install development tools
-RUN apk add --no-cache python3 make g++ git
+# Install development tools, Puppeteer dependencies and dumb-init
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git \
+    dumb-init \
+    # Dependencias necesarias para Puppeteer
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    # Otras dependencias útiles
+    udev \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Configurar Puppeteer para usar Chromium del sistema
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Tell Puppeteer to use the system Chromium
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
@@ -16,8 +40,15 @@ COPY packages/api/drizzle.config.ts ./
 COPY packages/api/drizzle ./drizzle
 COPY packages/api/tsconfig*.json ./
 
+# Copy the entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose ports
 EXPOSE 3000 9229
+
+# Configurar el entrypoint y command para desarrollo
+ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
 # Start development server with hot-reload
 CMD ["npm", "run", "dev"]

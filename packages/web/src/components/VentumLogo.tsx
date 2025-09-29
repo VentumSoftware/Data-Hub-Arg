@@ -20,13 +20,13 @@ const VentumLogo: React.FC<VentumLogoProps> = ({
   };
 
   const colors = {
-    primary: { main: '#1976d2', text: '#1976d2', subText: '#666' },
-    light: { main: '#ffffff', text: '#ffffff', subText: '#cccccc' },
-    dark: { main: '#333333', text: '#333333', subText: '#666666' }
+    primary: { main: '#1976d2', text: '#1976d2', subText: '#666', stroke: '#ffffff' },
+    light: { main: '#ffffff', text: '#ffffff', subText: '#666666', stroke: '#333333' },
+    dark: { main: '#333333', text: '#333333', subText: '#666666', stroke: '#ffffff' }
   };
 
   const { width, height, fontSize, subFontSize } = dimensions[size];
-  const { main, text, subText } = colors[variant];
+  const { main, text, subText, stroke } = colors[variant];
 
   return (
     <SvgIcon 
@@ -51,7 +51,7 @@ const VentumLogo: React.FC<VentumLogoProps> = ({
       {/* V symbol in the circle */}
       <path 
         d={`M${height / 2 - 8} ${height / 2 - 8} L${height / 2} ${height / 2 + 8} L${height / 2 + 8} ${height / 2 - 8}`}
-        stroke="white" 
+        stroke={stroke}
         strokeWidth="2.5" 
         fill="none" 
         strokeLinecap="round" 

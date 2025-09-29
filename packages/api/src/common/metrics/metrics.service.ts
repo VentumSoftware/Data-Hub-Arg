@@ -228,27 +228,27 @@ export class MetricsService {
 
   private logMetric(name: string, value: number, labels?: Record<string, string>, type?: string): void {
     // Only log metrics in development or when specifically enabled
-    if (process.env.NODE_ENV === 'development' || process.env.LOG_METRICS === 'true') {
-      appLogger.debug(`Metric recorded: ${name}`, {
-        operation: 'metric_recorded',
-        component: 'metrics_service',
-        metric: name,
-        value,
-        type,
-        labels,
-      });
-    }
+    // if (process.env.NODE_ENV === 'development' || process.env.LOG_METRICS === 'true') {
+    //   appLogger.debug(`Metric recorded: ${name}`, {
+    //     operation: 'metric_recorded',
+    //     component: 'metrics_service',
+    //     metric: name,
+    //     value,
+    //     type,
+    //     labels,
+    //   });
+    // }
 
-    // Send metrics to Elasticsearch with a different index pattern
-    appLogger.info(`Metric: ${name}`, {
-      operation: 'application_metric',
-      component: 'metrics',
-      metric: name,
-      value,
-      type,
-      labels,
-      timestamp: new Date().toISOString(),
-    });
+    // // Send metrics to Elasticsearch with a different index pattern
+    // appLogger.info(`Metric: ${name}`, {
+    //   operation: 'application_metric',
+    //   component: 'metrics',
+    //   metric: name,
+    //   value,
+    //   type,
+    //   labels,
+    //   timestamp: new Date().toISOString(),
+    // });
   }
 
   private initializeSystemMetrics(): void {

@@ -3,12 +3,13 @@ import { join, resolve } from 'path';
 import { parse } from 'yaml';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { 
-  permissions, roles, permissionsRolesMap, users, usersGroups, usersGroupsMap, 
-  permissionsGroupsMap, usersRolesMap, permissionsUsersMap 
+import {
+  permissions, roles, permissionsRolesMap, users, usersGroups, usersGroupsMap,
+  permissionsGroupsMap, usersRolesMap, permissionsUsersMap, currencies, currenciesRelations
 } from '../schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { existsSync } from 'fs';
+import { connect } from 'http2';
 
 const SYSTEM_USER_ID = parseInt(process.env.SYSTEM_USER_ID || '1');
 
@@ -49,6 +50,19 @@ interface SeedConfig {
   userGroups?: UserGroupSeed[];
   users?: UserSeed[];
 }
+interface CurrencySeed {
+  code: string;
+  label: string;
+  symbol: string;
+}
+
+interface CurrenciesRelationSeed {
+  dividend: number;
+  divisor: number;
+  op: string;
+  source: string;
+
+}
 
 export class DatabaseSeeder {
   private db: any;
@@ -57,7 +71,8 @@ export class DatabaseSeeder {
   private userGroupsConfig: UserGroupSeed[];
   private usersConfig: UserSeed[];
   private permissionAliases: Record<string, string> = {};
-
+  private currenciesConfig: CurrencySeed[];
+  private currenciesRelationsConfig: CurrenciesRelationSeed[];
   constructor(db: any) {
     this.db = db;
     this.loadConfigurations();
@@ -73,7 +88,7 @@ export class DatabaseSeeder {
       // Load all permission files
       const permissionFiles = [
         'permissions.yml',
-        'app-permissions.yml', 
+        'app-permissions.yml',
         'system-permissions.yml'
       ];
 
@@ -137,6 +152,21 @@ export class DatabaseSeeder {
         }
       }
 
+      const currenciesYaml = readFileSync(
+        join(__dirname, '../seeds/currencies.yml'),
+        'utf8'
+      );
+      //console.log('YAML content:', currenciesYaml); // ← Agrega esto para debug
+      const currenciesData = parse(currenciesYaml) as { currencies: CurrencySeed[] };
+      this.currenciesConfig = currenciesData.currencies || [];
+      const currenciesRelationsYaml = readFileSync(
+        join(__dirname, '../seeds/currenciesRelations.yml'),
+        'utf8'
+      );
+      const currenciesRelationsData = parse(currenciesRelationsYaml) as { currenciesRelations: CurrenciesRelationSeed[] };
+      this.currenciesRelationsConfig = currenciesRelationsData.currenciesRelations;
+      console.log(`📁 Loaded ${currenciesData.currencies.length} system currencies`);
+      console.log(`📁 Total: ${this.currenciesConfig.length} currencies and ${this.currenciesRelationsConfig.length} currencies relations`);
       // Setup backwards compatibility aliases (colon -> dot notation)
       this.setupPermissionAliases();
 
@@ -164,7 +194,7 @@ export class DatabaseSeeder {
       'fs:delete:directory': 'fs.delete.directory',
       'fs:delete:recursive': 'fs.delete.recursive',
       'fs:admin': 'fs.admin',
-      
+
       // Users
       'users:read': 'users.read',
       'users:create': 'users.create',
@@ -172,7 +202,7 @@ export class DatabaseSeeder {
       'users:delete': 'users.delete',
       'users:activity:read': 'users.activity.read',
       'users:history:read': 'users.history.read',
-      
+
       // System
       'system:admin': 'admin.access'
     };
@@ -183,7 +213,7 @@ export class DatabaseSeeder {
 
   async ensureSystemUser() {
     console.log('🤖 Ensuring system user exists...');
-    
+
     const existing = await this.db
       .select()
       .from(users)
@@ -204,7 +234,7 @@ export class DatabaseSeeder {
           editedBy: SYSTEM_USER_ID,
           editedSession: null
         });
-      
+
       // Sync the users sequence after inserting system user
       await this.db.execute(sql`SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM users), false);`);
       console.log(`  ✅ Created system user with ID: ${SYSTEM_USER_ID}`);
@@ -215,7 +245,7 @@ export class DatabaseSeeder {
 
   async seedPermissions() {
     console.log('🔑 Seeding permissions...');
-    
+
     for (const permission of this.permissionsConfig) {
       const existing = await this.db
         .select()
@@ -250,7 +280,7 @@ export class DatabaseSeeder {
 
   async seedRoles() {
     console.log('👥 Seeding roles...');
-    
+
     for (const role of this.rolesConfig) {
       const existing = await this.db
         .select()
@@ -291,7 +321,7 @@ export class DatabaseSeeder {
 
   async seedRolePermissions() {
     console.log('🔗 Seeding role-permission assignments...');
-    
+
     for (const role of this.rolesConfig) {
       const [roleRecord] = await this.db
         .select()
@@ -360,7 +390,7 @@ export class DatabaseSeeder {
     }
 
     console.log('📋 Seeding user groups...');
-    
+
     for (const group of this.userGroupsConfig) {
       const existing = await this.db
         .select()
@@ -392,7 +422,7 @@ export class DatabaseSeeder {
     }
 
     console.log('🔗 Seeding user group permissions...');
-    
+
     for (const group of this.userGroupsConfig) {
       if (!group.permissions || group.permissions.length === 0) {
         continue;
@@ -454,7 +484,7 @@ export class DatabaseSeeder {
     }
 
     console.log('👤 Seeding sample users...');
-    
+
     for (const user of this.usersConfig) {
       const existing = await this.db
         .select()
@@ -463,7 +493,7 @@ export class DatabaseSeeder {
         .limit(1);
 
       let userId: number;
-      
+
       if (existing.length === 0) {
         const [newUser] = await this.db
           .insert(users)
@@ -479,7 +509,7 @@ export class DatabaseSeeder {
             editedSession: null
           })
           .returning();
-        
+
         userId = newUser.id;
         console.log(`  ✅ Created sample user: ${user.email}`);
       } else {
@@ -495,7 +525,7 @@ export class DatabaseSeeder {
             editedBy: SYSTEM_USER_ID
           })
           .where(eq(users.id, existing[0].id));
-        
+
         userId = existing[0].id;
         console.log(`  🔄 Updated sample user: ${user.email}`);
       }
@@ -588,9 +618,90 @@ export class DatabaseSeeder {
     }
   }
 
+  //---------------------------------------------CUSTOM---------------------------------------------
+    async seedCurrencies() {
+    console.log('🔑 Seeding currencies...');
+
+    for (const currency of this.currenciesConfig) {
+      const existing = await this.db
+        .select()
+        .from(currencies)
+        .where(eq(currencies.code, currency.code))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await this.db
+          .insert(currencies)
+          .values({
+            code: currency.code,
+            label: currency.label,
+            symbol: currency.symbol,
+          });
+        console.log(`  ✅ Created currency: ${currency.label} - ${currency.code}`);
+      } else {
+        // Update existing currency metadata
+        await this.db
+          .update(currencies)
+          .set({
+            label: currency.label,
+            code: currency.code,
+            symbol: currency.symbol
+          })
+          .where(eq(currencies.id, existing[0].id));
+        console.log(`  🔄 Updated currency: ${currency.label} - ${currency.code}`);
+      }
+    }
+  }
+
+  async seedCurrenciesRelations() {
+    console.log('🔗 Seeding role-currency assignments...');
+    const allCurrencies = await this.db
+      .select()
+      .from(currencies)
+      .where(eq(currencies.isDeleted, false));
+      console.log('All currencies:', allCurrencies);
+    for (const relation of this.currenciesRelationsConfig) {
+      console.log(`Checking relation: ${relation}`);
+      const dividendoId = allCurrencies.find((c: any) => c.code === relation.dividend);
+      const divisorId = allCurrencies.find((c: any) => c.code === relation.divisor);
+      const existing = await this.db
+        .select()
+        .from(currenciesRelations)
+        .where(
+          and(
+            eq(currenciesRelations.dividendId, dividendoId.id),
+            eq(currenciesRelations.divisorId, divisorId.id)
+          )
+        )
+        .limit(1);
+      if (existing.length === 0) {
+        await this.db
+          .insert(currenciesRelations)
+          .values({
+            dividendId: dividendoId.id,
+            divisorId: divisorId.id,
+            op: relation.op,
+            source: relation.source,
+          });
+        console.log(`  ✅ Created relation: ${relation.dividend} ${relation.op} ${relation.divisor}`);
+      } else {
+        // Update existing currency metadata
+        await this.db
+          .update(currenciesRelations)
+          .set({
+            op: relation.op,
+            source: relation.source
+          })
+          .where(eq(currenciesRelations.id, existing[0].id));
+        console.log(`  🔄 Updated relation: ${relation.dividend} ${relation.op} ${relation.divisor}`);
+      }
+    }
+  }
+
+
   async seedAll() {
     console.log('🌱 Starting enhanced database seeding...');
-    
+
     try {
       await this.ensureSystemUser();
       await this.seedPermissions();
@@ -599,7 +710,8 @@ export class DatabaseSeeder {
       await this.seedUserGroups();
       await this.seedUserGroupPermissions();
       await this.seedSampleUsers();
-      
+  await this.seedCurrencies();
+      await this.seedCurrenciesRelations();
       console.log('✅ Enhanced database seeding completed successfully!');
     } catch (error) {
       console.error('❌ Database seeding failed:', error);
@@ -648,15 +760,14 @@ export class DatabaseSeeder {
     };
   }
 }
-
 // Run if called directly
 export async function runSeeder() {
   console.log('🚀 Running database seeder...');
-  
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
-  
+  console.log({connectionString: process.env.DATABASE_URL});
   const db = drizzle(pool, { schema: { permissions, roles, permissionsRolesMap, users } });
   const seeder = new DatabaseSeeder(db);
 

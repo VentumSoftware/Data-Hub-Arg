@@ -3,110 +3,26 @@
 # while permissions.yml contains generic system permissions
 
 permissions:
-  # Company Management
-  - name: companies:create
-    label: Create Company
-    group: company-management
-    description: Create new companies
+  # Currency Management
+  - name: currencies:create
+    label: Create Currency
+    group: currency-management
+    description: Create new currencies
     
-  - name: companies:read
+  - name: currencies:read
     label: Read Companies
-    group: company-management
-    description: View company information
+    group: currency-management
+    description: View currency information
     
-  - name: companies:update
-    label: Update Company
-    group: company-management
-    description: Update company information
+  - name: currencies:update
+    label: Update Currency
+    group: currency-management
+    description: Update currency information
     
-  - name: companies:delete
-    label: Delete Company
-    group: company-management
-    description: Delete companies
-
-  # Project Management
-  - name: projects:create
-    label: Create Project
-    group: project-management
-    description: Create new projects
-    
-  - name: projects:read
-    label: Read Projects
-    group: project-management
-    description: View project information
-    
-  - name: projects:update
-    label: Update Project
-    group: project-management
-    description: Update project information
-    
-  - name: projects:delete
-    label: Delete Project
-    group: project-management
-    description: Delete projects
-
-  # Functional Unit Management
-  - name: units:create
-    label: Create Functional Unit
-    group: unit-management
-    description: Create new functional units
-    
-  - name: units:read
-    label: Read Functional Units
-    group: unit-management
-    description: View functional unit information
-    
-  - name: units:update
-    label: Update Functional Unit
-    group: unit-management
-    description: Update functional unit information
-    
-  - name: units:delete
-    label: Delete Functional Unit
-    group: unit-management
-    description: Delete functional units
-
-  # Unit Ownership Management
-  - name: ownership:create
-    label: Create Ownership
-    group: ownership-management
-    description: Create unit ownership records
-    
-  - name: ownership:read
-    label: Read Ownership
-    group: ownership-management
-    description: View ownership information
-    
-  - name: ownership:update
-    label: Update Ownership
-    group: ownership-management
-    description: Update ownership records
-    
-  - name: ownership:delete
-    label: Delete Ownership
-    group: ownership-management
-    description: Remove ownership records
-
-  # Payment Management
-  - name: payments:create
-    label: Create Payment
-    group: payment-management
-    description: Create new payment records
-    
-  - name: payments:read
-    label: Read Payments
-    group: payment-management
-    description: View payment information
-    
-  - name: payments:update
-    label: Update Payment
-    group: payment-management
-    description: Update payment records
-    
-  - name: payments:delete
-    label: Delete Payment
-    group: payment-management
-    description: Delete payment records
+  - name: currencies:delete
+    label: Delete Currency
+    group: currency-management
+    description: Delete currencies
 
   # User Activity & History
   - name: users:activity:read
@@ -246,22 +162,22 @@ permissions:
 
   # Currency Indexes Management
   - name: indexes:currencies:create
-    label: Create Currency
+    label: Create Currency Index
     group: indexes-management
     description: Create new currencies in the system
     
   - name: indexes:currencies:read
-    label: Read Currencies
+    label: Read Currencies Index
     group: indexes-management
     description: View currency information
     
   - name: indexes:currencies:update
-    label: Update Currency
+    label: Update Currency Index
     group: indexes-management
     description: Update currency information
     
   - name: indexes:currencies:delete
-    label: Delete Currency
+    label: Delete Currency Indexes
     group: indexes-management
     description: Delete currencies from the system
 
@@ -323,24 +239,3 @@ permissions:
     label: Indexes Admin
     group: indexes-admin
     description: Full currency indexes administration
-
-  # Mailing System
-  - name: mailing:create
-    label: Create Mail
-    group: mailing-management
-    description: Create and send emails
-    
-  - name: mailing:read
-    label: Read Mail
-    group: mailing-management
-    description: View email information
-    
-  - name: mailing:templates:manage
-    label: Manage Mail Templates
-    group: mailing-management
-    description: Create and manage email templates
-    
-  - name: mailing:admin
-    label: Mailing Admin
-    group: mailing-management
-    description: Full mailing administration

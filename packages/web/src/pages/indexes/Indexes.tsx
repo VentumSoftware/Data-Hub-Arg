@@ -153,83 +153,84 @@ interface ConversionResult {
 // Componente Card para cada índice
 const IndexCard: React.FC<{ data: PivotedData }> = ({ data }) => {
   const [showAll, setShowAll] = useState(false);
-  
+
   return (
-  <Card
-    sx={{
-      mb: 2,
-      p: 2,
-      border: `1px solid rgba(190, 181, 181, 0.1)`,
-      '&:hover': {
-        boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'box-shadow 0.2s ease-in-out'
-      },
-      height: '100%', width: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignContent: 'stretch'
-    }}
-  >
+    <Card
+      sx={{
+        mb: 2,
+        p: 2,
+        border: `1px solid rgba(190, 181, 181, 0.1)`,
+        '&:hover': {
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+          transition: 'box-shadow 0.2s ease-in-out'
+        },
+        height: '100%', width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignContent: 'stretch'
+      }}
+    >
       {/* Header */}
-    <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-        <Typography variant="h6" fontWeight="bold" color="primary">
-          {new Date(data.date).toLocaleDateString('es-ES', {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          })}
-        </Typography>
-        {data.date > new Date().toISOString().split('T')[0] && (
-          <Chip
-            label="Proyectado"
-            size="small"
-            color="warning"
-            variant="outlined"
-          />
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+          <Typography variant="h6" fontWeight="bold" color="primary">
+            {new Date(data.date).toLocaleDateString('es-ES', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </Typography>
+          {data.date > new Date().toISOString().split('T')[0] && (
+            <Chip
+              label="Proyectado"
+              size="small"
+              color="warning"
+              variant="outlined"
+            />
+          )}
+        </Box>
+
+        <Divider sx={{ my: 1 }} />
+
+        {/* Contenido de monedas */}
+        <Grid container spacing={1}>
+          {Object.entries(data)
+            .filter(([key]) => key !== 'date' && key !== 'id')
+            .slice(0, showAll ? undefined : 4)
+            .map(([currency, value]) => (
+              <Grid size={12} key={currency}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" fontWeight="medium" color="text.secondary">
+                    {currency.toUpperCase()}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {typeof value === 'number' ? value.toFixed(4) : 'N/A'}
+                  </Typography>
+                </Box>
+              </Grid>
+            ))}
+        </Grid>
+
+        {Object.keys(data).filter(key => key !== 'date' && key !== 'id').length > 4 && (
+          <Box textAlign="center" mt={1}>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => {
+                setShowAll((prevShowAll) => !prevShowAll);
+              }}>
+              <Typography variant="caption" color="text.secondary">
+                {showAll ? 'Mostrar -' : 'Mostrar ' + `${Object.keys(data).filter(key => key !== 'date' && key !== 'id').length - 4} +`}
+              </Typography>
+            </Button>
+          </Box>
         )}
       </Box>
 
-      <Divider sx={{ my: 1 }} />
-
-      {/* Contenido de monedas */}
-      <Grid container spacing={1}>
-        {Object.entries(data)
-          .filter(([key]) => key !== 'date' && key !== 'id')
-          .slice(0, showAll ? undefined : 4)
-          .map(([currency, value]) => (
-            <Grid size={12} key={currency}> 
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" fontWeight="medium" color="text.secondary">
-                  {currency.toUpperCase()}
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  {typeof value === 'number' ? value.toFixed(4) : 'N/A'}
-                </Typography>
-              </Box>
-            </Grid>
-          ))}
-      </Grid>
-
-      {Object.keys(data).filter(key => key !== 'date' && key !== 'id').length > 4 && (
-        <Box textAlign="center" mt={1}>
-          <Button
-            size="small"
-            variant="text"
-            onClick={() => {
-              setShowAll((prevShowAll) => !prevShowAll );
-            }}>
-          <Typography variant="caption" color="text.secondary">
-            { showAll ? 'Mostrar -' : 'Mostrar '+ `${Object.keys(data).filter(key => key !== 'date' && key !== 'id').length - 4} +`}
-          </Typography>
-          </Button>
-        </Box>
-      )}
-    </Box>
-
-  </Card>
-)};
+    </Card>
+  )
+};
 // Skeleton loader para cards
 const CardSkeleton: React.FC = () => (
   <Card sx={{ mb: 2, p: 2 }}>
@@ -242,29 +243,29 @@ const CardSkeleton: React.FC = () => (
   </Card>
 );
 const Indexes: React.FC = () => {
-    const [isScrolled, setIsScrolled] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-  
-    useEffect(() => {
-      const container = containerRef.current;
-  
-      if (!container) return;
-  
-      const handleScroll = () => {
-        // Detecta si se ha scrolleado más de 10px
-        const scrolled = container.scrollTop > 10;
-        setIsScrolled(scrolled);
-      };
-  
-      // Agrega el event listener al contenedor
-      container.addEventListener('scroll', handleScroll);
-  
-      // Limpia el event listener cuando el componente se desmonta
-      return () => {
-        container.removeEventListener('scroll', handleScroll);
-      };
-    }, []);
-    const scrollToTop = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) return;
+
+    const handleScroll = () => {
+      // Detecta si se ha scrolleado más de 10px
+      const scrolled = container.scrollTop > 10;
+      setIsScrolled(scrolled);
+    };
+
+    // Agrega el event listener al contenedor
+    container.addEventListener('scroll', handleScroll);
+
+    // Limpia el event listener cuando el componente se desmonta
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  const scrollToTop = () => {
     if (containerRef.current) {
       containerRef.current.scrollTo({
         top: 0,
@@ -913,7 +914,7 @@ const Indexes: React.FC = () => {
     setActiveTab(newValue);
     navigate(`/indices/${newValue}`);
   };
-
+  console.log({ isScrolled })
   return (<Box ref={containerRef} sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto', backgroundColor: 'background.default' }}>
 
     {/* Header */}
@@ -934,7 +935,7 @@ const Indexes: React.FC = () => {
           sx={{
             position: 'fixed',
             top: 24,
-            right: '50%',
+            right: '45%',
             zIndex: 1000,
             backgroundColor: 'primary.main',
             color: 'white',
@@ -1073,15 +1074,15 @@ const Indexes: React.FC = () => {
             ) : (
               <>
                 {/* Grid de Cards responsive */}
-                <Grid container spacing={2}  sx={{ 
-    alignItems: "stretch" // ✅ Esto es clave para igualar alturas
-  }}>
+                <Grid container spacing={2} sx={{
+                  alignItems: "stretch" // ✅ Esto es clave para igualar alturas
+                }}>
                   {cardData.map((data, index) => (
                     <Grid
                       size={{ xs: 12, sm: 6 }}
-                       sx={{
-        display: 'flex', // ✅ Flex para que el hijo ocupe toda la altura
-      }}
+                      sx={{
+                        display: 'flex', // ✅ Flex para que el hijo ocupe toda la altura
+                      }}
                       key={`${data.date}-${index}`}
                     >
                       <IndexCard data={data} />
@@ -1330,33 +1331,53 @@ const Indexes: React.FC = () => {
           <Typography variant="h5" gutterBottom>
             Resultados de Proyecciones
           </Typography>
-          {projectedData.length > 0 ? (
-            <Paper>
-              <DataGrid
-                rows={projectedData}
-                columns={columns}
-                autoHeight
-                disableRowSelectionOnClick
-                getRowId={(row) => row.date}
-                sx={{
-                  '& .MuiDataGrid-columnHeader': {
-                    fontSize: '0.75rem',
-                  },
-                  '& .MuiDataGrid-cell': {
-                    color: '#d97706',
-                    fontWeight: 'bold',
-                  }
-                }}
-              />
-            </Paper>
-          ) : (
-            <Typography variant="body1" color="text.secondary">
-              No hay proyecciones disponibles. Ve a la pestaña "Funciones" para crear proyecciones.
-            </Typography>
-          )}
+          {projectedData.length > 0 ?
+            (
+              <>
+                <Paper sx={{ flexDirection: 'column', display: { xs: 'none', md: 'flex' } }}>
+                  <DataGrid
+                    rows={projectedData}
+                    columns={columns}
+                    autoHeight
+                    disableRowSelectionOnClick
+                    getRowId={(row) => row.date}
+                    sx={{
+                      '& .MuiDataGrid-columnHeader': {
+                        fontSize: '0.75rem',
+                      },
+                      '& .MuiDataGrid-cell': {
+                        color: '#d97706',
+                        fontWeight: 'bold',
+                      }
+                    }}
+                  />
+                </Paper>
+
+                <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+
+                  {/* Grid de Cards responsive */}
+                  <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+                    {projectedData.map((data, index) => (
+                      <Grid
+                        size={{ xs: 12, sm: 6 }}
+                        sx={{
+                          display: 'flex', // ✅ Flex para que el hijo ocupe toda la altura
+                        }}
+                        key={`${data.date}-${index}`}
+                      >
+                        <IndexCard data={data} />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              </>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No hay resultados de proyección disponibles.
+              </Typography>
+            )}
         </Box>
       )}
-
       {/* Tab 2: Funciones */}
       {activeTab === 'funciones' && (
         <Box sx={{ pb: 2 }}>

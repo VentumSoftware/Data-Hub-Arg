@@ -4,39 +4,46 @@ import { Response } from 'express';
 import { AccessService } from './access.service';
 import { AuthGuard } from './guards/auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { CanDeleteUsers, CanEditUsers, CanReadUsers } from './decorators/permissions.decorator';
 import { SessionConfig } from './config/session.config';
-
+import { Public } from './decorators/public.decorator';
+import { TokenAuthGuard } from './guards/token-auth.guard';
+import { PermissionGuard } from './guards/permission.guard';
+import { AuthToken } from './decorators/auth-token.decorator';
 
 @ApiTags('Access & Authentication')
 @Controller('access')
+@UseGuards(AuthGuard, PermissionGuard)
 export class AccessController {
     constructor(private readonly accessService: AccessService) { }
 
+    @Public()
     @Get('google')
     @UseGuards(PassportAuthGuard('google'))
     async googleAuth(@Req() req, @Res() res: Response) {
         // Store the user's real IP before redirecting to Google
         const userIpAddress = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || null;
         const userAgent = req.headers['user-agent'] || null;
-        
+
         // Store IP with a temporary key based on session or generate a unique key
         const tempKey = req.sessionID || `temp_${Date.now()}_${Math.random()}`;
         req.session.tempAuthKey = tempKey;
-        
+
         if (userIpAddress) {
             this.accessService.storeUserIp(tempKey, userIpAddress, userAgent);
         }
-        
+
         // Redirects to Google for authentication
     };
 
+    @Public()
     @Get('google/redirect')
     @UseGuards(PassportAuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
         try {
             console.log('Google OAuth callback - req.user:', JSON.stringify(req.user));
             const { token, expiresAt } = await this.accessService.handleGoogleLogin(req);
-            res.cookie('token', token, { 
+            res.cookie('token', token, {
                 httpOnly: true,    // Prevents XSS attacks
                 secure: process.env.NODE_ENV === 'production', // HTTPS only in production
                 sameSite: 'lax',   // CSRF protection
@@ -62,7 +69,7 @@ export class AccessController {
     @ApiOperation({ summary: 'Get current user profile' })
     @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
     async getProfile(@Req() req) {
-        return { 
+        return {
             success: true,
             user: req.user,
             session: {
@@ -88,16 +95,17 @@ export class AccessController {
     async logout(@Req() req, @Res() res: Response) {
         const token = req.cookies?.token || req.headers['authorization']?.replace('Bearer ', '');
         await this.accessService.logout(token, req.user.id);
-       
+
         res.clearCookie('token');
-        res.status(200).send({ 
-            success: true, 
+        res.status(200).send({
+            success: true,
             message: 'Logged out successfully'
         });
     };
 
     @Get('users')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, PermissionGuard)
+@CanReadUsers() // ← Esto es equivalente a @RequirePermissions([{ permission: 'users.read' }])
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
     async getUsers(@Req() req) {
@@ -120,12 +128,12 @@ export class AccessController {
 
     @Get('session/:sessionToken/info')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get detailed session information',
         description: 'Returns session details, user information, and location data from IP address. The sessionToken parameter should be the same token used for authentication.'
     })
-    @ApiParam({ 
-        name: 'sessionToken', 
+    @ApiParam({
+        name: 'sessionToken',
         description: 'Session token used for authentication'
     })
     @ApiResponse({
@@ -139,7 +147,7 @@ export class AccessController {
                     description: 'Session details including status and metadata'
                 },
                 user: {
-                    type: 'object', 
+                    type: 'object',
                     description: 'Complete user profile information'
                 },
                 location: {
@@ -171,7 +179,7 @@ export class AccessController {
         } catch (error) {
             if (error.message.includes('Session not found')) {
                 throw new HttpException(
-                    { 
+                    {
                         success: false,
                         message: 'Session not found',
                         error: 'NOT_FOUND'
@@ -179,7 +187,7 @@ export class AccessController {
                     HttpStatus.NOT_FOUND
                 );
             }
-            
+
             throw new HttpException(
                 {
                     success: false,
@@ -193,7 +201,7 @@ export class AccessController {
 
     @Get('session/current/info')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get current session information',
         description: 'Returns detailed information for the current authenticated session including user data and location info'
     })
@@ -205,10 +213,10 @@ export class AccessController {
         try {
             // Get token from the request (same logic as SessionAuthGuard)
             const token = req.cookies?.token || req.headers['authorization']?.replace('Bearer ', '');
-            
+
             if (!token) {
                 throw new HttpException(
-                    { 
+                    {
                         success: false,
                         message: 'No authentication token found',
                         error: 'NO_TOKEN'
@@ -225,7 +233,7 @@ export class AccessController {
         } catch (error) {
             if (error.message.includes('Session not found')) {
                 throw new HttpException(
-                    { 
+                    {
                         success: false,
                         message: 'Current session not found',
                         error: 'SESSION_NOT_FOUND'
@@ -233,7 +241,7 @@ export class AccessController {
                     HttpStatus.NOT_FOUND
                 );
             }
-            
+
             throw new HttpException(
                 {
                     success: false,
@@ -247,7 +255,7 @@ export class AccessController {
 
     @Get('activity')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get system activity log',
         description: 'Returns user logins and database changes made by users, leveraging CDC data for comprehensive audit trail'
     })
@@ -272,8 +280,9 @@ export class AccessController {
     };
 
     @Get('users/:userId/history')
-    @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @UseGuards(AuthGuard, PermissionGuard)
+    @CanReadUsers()
+    @ApiOperation({
         summary: 'Get specific user change history',
         description: 'Returns change history for a specific user record from CDC data'
     })
@@ -299,8 +308,9 @@ export class AccessController {
     };
 
     @Get('users/:userId')
-    @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @UseGuards(AuthGuard, PermissionGuard)
+    @CanReadUsers()
+    @ApiOperation({
         summary: 'Get specific user details',
         description: 'Returns detailed information for a specific user including roles, permissions, and activity summary'
     })
@@ -326,13 +336,14 @@ export class AccessController {
     };
 
     @Put('users/:userId')
-    @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @UseGuards(AuthGuard, PermissionGuard)
+    @CanEditUsers()
+    @ApiOperation({
         summary: 'Update user details',
         description: 'Updates a user\'s information including basic profile data'
     })
     @ApiParam({ name: 'userId', description: 'User ID to update' })
-    @ApiBody({ 
+    @ApiBody({
         description: 'User data to update',
         schema: {
             type: 'object',
@@ -370,8 +381,9 @@ export class AccessController {
     };
 
     @Delete('users/:userId')
-    @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @UseGuards(AuthGuard, PermissionGuard)
+    @CanDeleteUsers()
+    @ApiOperation({
         summary: 'Delete user',
         description: 'Marks a user as deleted (soft delete)'
     })
@@ -398,7 +410,7 @@ export class AccessController {
 
     @Get('activity/user/:userId')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get specific user activity log',
         description: 'Returns activity log for a specific user including logins and database changes'
     })
@@ -425,7 +437,7 @@ export class AccessController {
 
     @Post('session/refresh')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Refresh/extend current session',
         description: 'Extends the expiration time of the current session'
     })
@@ -433,10 +445,10 @@ export class AccessController {
     async refreshSession(@Req() req, @Res() res: Response) {
         try {
             const token = req.cookies?.token || req.headers['authorization']?.replace('Bearer ', '');
-            
+
             if (!token) {
                 throw new HttpException(
-                    { 
+                    {
                         success: false,
                         message: 'No authentication token found',
                         error: 'NO_TOKEN'
@@ -446,15 +458,15 @@ export class AccessController {
             }
 
             const result = await this.accessService.refreshSession(token);
-            
+
             // Refresh the main authentication cookie with new expiration
-            res.cookie('token', token, { 
+            res.cookie('token', token, {
                 httpOnly: true,    // Prevents XSS attacks
                 secure: process.env.NODE_ENV === 'production', // HTTPS only in production
                 sameSite: 'lax',   // CSRF protection
                 maxAge: SessionConfig.getExpirationMs() // New expiration time
             });
-            
+
             // Set updated session expiration cookie for frontend
             res.cookie('sessionExpiresAt', result.expiresAt.toISOString(), {
                 httpOnly: false,   // Allow frontend access
@@ -462,7 +474,7 @@ export class AccessController {
                 sameSite: 'lax',
                 maxAge: SessionConfig.getExpirationMs()
             });
-            
+
             res.json({
                 success: true,
                 data: result
@@ -481,7 +493,7 @@ export class AccessController {
 
     @Get('session/time-remaining')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get session time remaining',
         description: 'Returns the time remaining in seconds for the current session'
     })
@@ -489,10 +501,10 @@ export class AccessController {
     async getSessionTimeRemaining(@Req() req) {
         try {
             const token = req.cookies?.token || req.headers['authorization']?.replace('Bearer ', '');
-            
+
             if (!token) {
                 throw new HttpException(
-                    { 
+                    {
                         success: false,
                         message: 'No authentication token found',
                         error: 'NO_TOKEN'
@@ -522,7 +534,7 @@ export class AccessController {
 
     @Get('permissions')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get all system permissions',
         description: 'Returns all available permissions in the system with their metadata'
     })
@@ -550,7 +562,7 @@ export class AccessController {
 
     @Get('users/:userId/permissions')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get user permissions',
         description: 'Returns all permissions for a specific user from all sources (direct, roles, groups)'
     })
@@ -577,7 +589,7 @@ export class AccessController {
 
     @Get('roles')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get all system roles',
         description: 'Returns all available roles in the system'
     })
@@ -603,11 +615,11 @@ export class AccessController {
 
     @Post('roles')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Create new role',
         description: 'Creates a new role with specified permissions'
     })
-    @ApiBody({ 
+    @ApiBody({
         description: 'Role creation data',
         schema: {
             type: 'object',
@@ -644,12 +656,12 @@ export class AccessController {
 
     @Put('roles/:roleId')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Update role',
         description: 'Updates an existing role and its permissions'
     })
     @ApiParam({ name: 'roleId', description: 'Role ID to update' })
-    @ApiBody({ 
+    @ApiBody({
         description: 'Role update data',
         schema: {
             type: 'object',
@@ -685,7 +697,7 @@ export class AccessController {
 
     @Delete('roles/:roleId')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Delete role',
         description: 'Marks a role as deleted (soft delete)'
     })
@@ -714,7 +726,7 @@ export class AccessController {
 
     @Get('scope/entities')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get scopeable entities configuration',
         description: 'Returns all entities that can be used as permission scopes'
     })
@@ -744,7 +756,7 @@ export class AccessController {
 
     @Get('scope/entities/:entityType/instances')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Get entity instances for scoping',
         description: 'Returns all available instances of a specific entity type'
     })
@@ -773,12 +785,12 @@ export class AccessController {
 
     @Post('users/:userId/permissions')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Assign permission to user',
         description: 'Assigns a permission directly to a user, optionally with scoping'
     })
     @ApiParam({ name: 'userId', description: 'User ID to assign permission to' })
-    @ApiBody({ 
+    @ApiBody({
         description: 'Permission assignment data',
         schema: {
             type: 'object',
@@ -792,17 +804,17 @@ export class AccessController {
     })
     @ApiResponse({ status: 201, description: 'Permission assigned successfully' })
     async assignPermissionToUser(
-        @Param('userId') userId: string, 
-        @Body() assignmentData: { 
-            permissionName: string; 
-            referenceableType?: string; 
-            referenceableId?: number 
-        }, 
+        @Param('userId') userId: string,
+        @Body() assignmentData: {
+            permissionName: string;
+            referenceableType?: string;
+            referenceableId?: number
+        },
         @Req() req
     ) {
         try {
             await this.accessService.assignPermissionToUser(
-                parseInt(userId), 
+                parseInt(userId),
                 assignmentData.permissionName,
                 req.user.id,
                 assignmentData.referenceableType,
@@ -826,12 +838,12 @@ export class AccessController {
 
     @Post('users/:userId/roles')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Assign role to user',
         description: 'Assigns a role to a user, optionally with scoping'
     })
     @ApiParam({ name: 'userId', description: 'User ID to assign role to' })
-    @ApiBody({ 
+    @ApiBody({
         description: 'Role assignment data',
         schema: {
             type: 'object',
@@ -845,17 +857,17 @@ export class AccessController {
     })
     @ApiResponse({ status: 201, description: 'Role assigned successfully' })
     async assignRoleToUser(
-        @Param('userId') userId: string, 
-        @Body() assignmentData: { 
-            roleName: string; 
-            referenceableType?: string; 
-            referenceableId?: number 
-        }, 
+        @Param('userId') userId: string,
+        @Body() assignmentData: {
+            roleName: string;
+            referenceableType?: string;
+            referenceableId?: number
+        },
         @Req() req
     ) {
         try {
             await this.accessService.assignRoleToUser(
-                parseInt(userId), 
+                parseInt(userId),
                 assignmentData.roleName,
                 req.user.id,
                 assignmentData.referenceableType,
@@ -879,7 +891,7 @@ export class AccessController {
 
     @Delete('users/:userId/permissions/:permissionName')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Remove permission from user',
         description: 'Removes a permission assignment from a user'
     })
@@ -887,13 +899,13 @@ export class AccessController {
     @ApiParam({ name: 'permissionName', description: 'Name of the permission to remove' })
     @ApiResponse({ status: 200, description: 'Permission removed successfully' })
     async removePermissionFromUser(
-        @Param('userId') userId: string, 
+        @Param('userId') userId: string,
         @Param('permissionName') permissionName: string,
         @Req() req
     ) {
         try {
             await this.accessService.removePermissionFromUser(
-                parseInt(userId), 
+                parseInt(userId),
                 permissionName,
                 req.user.id
             );
@@ -915,7 +927,7 @@ export class AccessController {
 
     @Delete('users/:userId/roles/:roleName')
     @UseGuards(AuthGuard)
-    @ApiOperation({ 
+    @ApiOperation({
         summary: 'Remove role from user',
         description: 'Removes a role assignment from a user'
     })
@@ -923,13 +935,13 @@ export class AccessController {
     @ApiParam({ name: 'roleName', description: 'Name of the role to remove' })
     @ApiResponse({ status: 200, description: 'Role removed successfully' })
     async removeRoleFromUser(
-        @Param('userId') userId: string, 
+        @Param('userId') userId: string,
         @Param('roleName') roleName: string,
         @Req() req
     ) {
         try {
             await this.accessService.removeRoleFromUser(
-                parseInt(userId), 
+                parseInt(userId),
                 roleName,
                 req.user.id
             );

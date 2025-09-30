@@ -4,7 +4,6 @@ import { CurrencyConverterService, Currency, Relation, Index, ConversionOptions 
 import { IndexesService } from './indexes.services';
 import { AuthGuard } from '../../access/guards/auth.guard';
 import { PermissionGuard } from '../../access/guards/permission.guard';
-import { RequirePermissions, CanReadUsers } from '../../access/decorators/permissions.decorator';
 import { Public } from '../../access/decorators/public.decorator';
 import { TokenAuthGuard } from '../../access/guards/token-auth.guard';
 import { AuthToken } from '../../access/decorators/auth-token.decorator';

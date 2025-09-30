@@ -13,6 +13,8 @@ export class AccessService {
   private db;
   private users;
   private sessions;
+  private roles;
+  private usersRolesMap;
   private tempUserIpStore = new Map<string, { ip: string, userAgent: string, timestamp: number }>();
 
   constructor(
@@ -22,9 +24,11 @@ export class AccessService {
     private scopeConfigService: ScopeConfigService
   ) {
     this.db = this.databaseService.db;
-    const { users, sessions } = this.databaseService.schema;
+    const { users, sessions, roles, usersRolesMap } = this.databaseService.schema;
     this.users = users;
     this.sessions = sessions;
+    this.roles = roles;
+    this.usersRolesMap = usersRolesMap;
     
     // Clean up old entries every 10 minutes
     setInterval(() => {
@@ -71,6 +75,17 @@ export class AccessService {
         editedAt: new Date(),
         editedBy: 1,
       }).returning();
+      // Hay que darle un rol "guest" por default
+      const roleUser = await this.db.select().from(this.roles).where(eq(this.roles.name, 'guest'));
+      await this.db.insert(this.usersRolesMap).values({
+        userId: user.id,
+        roleId: roleUser[0].id,
+        isDeleted: false,
+        editedAt: new Date(),
+        editedBy: 1,
+      });
+      
+
     }
 
     // Generate a secure random session token (64 chars)

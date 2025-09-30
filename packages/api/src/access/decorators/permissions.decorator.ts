@@ -1,3 +1,4 @@
+// src/access/decorators/permissions.decorator.ts
 import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { PermissionCheck } from '../guards/permission.guard';
 

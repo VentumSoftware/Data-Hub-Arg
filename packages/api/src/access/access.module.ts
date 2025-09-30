@@ -11,7 +11,7 @@ import { IpApiService } from './services/ip-api.service';
 
 @Module({
   imports: [
-    DatabaseModule,
+    DatabaseModule, AuthGuard
   ],
   controllers: [AccessController],
   providers: [

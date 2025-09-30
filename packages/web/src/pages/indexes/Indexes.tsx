@@ -981,7 +981,7 @@ const Indexes: React.FC = () => {
     <Box sx={{ pr: 3, pl: 3, }}>
       {/* Navigation Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange}>
+        <Tabs value={activeTab} onChange={handleTabChange}  variant={'scrollable'} allowScrollButtonsMobile>
           <Tab label="Índices" value={'historico'} />
           <Tab label="Proyecciones" value={'proyecciones'} />
           <Tab label="Funciones" value={'funciones'} />

@@ -157,18 +157,20 @@ services:
       - app-network-dev
     restart: unless-stopped
 
-  # SFTP Server
   sftp:
     image: atmoz/sftp:alpine
     container_name: ${APP_NAME:-app}-sftp-dev
     ports:
       - "${SFTP_PORT:-2222}:22"
     volumes:
-      - sftp_dev_data:/home/app_user/upload
-    command: ["app_user:app_sftp_password:1001:1001"]
+      - sftp_dev_data:/home/app_user/uploads
+    command: 
+      - "app_user:app_sftp_password:1001:1001:uploads"
+      # Nota: 'uploads' en plural para evitar conflicto con volumen existente
     networks:
       - app-network-dev
     restart: unless-stopped
+
   opensearch:
     image: opensearchproject/opensearch:2.11.1
     container_name: ${APP_NAME:-app}-opensearch-dev

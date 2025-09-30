@@ -6,7 +6,7 @@ import { fsNodes } from '../../drizzle/schema';
 import { eq, and } from 'drizzle-orm';
 import * as mime from 'mime-types';
 
-export const rootPath = '/upload';
+export const rootPath = '/uploads';
 const addRootPath = (path: string) => rootPath + (path.startsWith('/') ? path : '/' + path);
 
 export const sftpConfig = {
@@ -410,6 +410,8 @@ export class FsRepository implements OnModuleInit, OnModuleDestroy {
         referenceableId?: number,
         originalName?: string
     ): Promise<number> {
+            console.log('📁 FsService.writeFile - Intentando escribir:', path);
+    console.log('📁 Contexto usuario:', editedBy);
         // First perform SFTP operation
         await this.withRetry(() =>
             new Promise<void>((rs, rj) =>

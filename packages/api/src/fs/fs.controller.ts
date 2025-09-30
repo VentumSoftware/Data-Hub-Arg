@@ -12,10 +12,11 @@ import { PERMISSIONS } from '../common/permissions/permission-registry';
 import { DatabaseService } from '../database/database.service';
 import { permissions, permissionsUsersMap, permissionsRolesMap, usersRolesMap, permissionsGroupsMap, usersGroupsMap } from '../../drizzle/schema';
 import { eq, and, or } from 'drizzle-orm';
+import { PermissionGuard } from '../access/guards/permission.guard';
 
 @ApiTags('File System')
 @Controller('fs')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionGuard)
 export class FsController {
   constructor(
     private readonly fsService: FsService,
@@ -160,7 +161,7 @@ export class FsController {
     return await this.fsService.readFile(path).catch(error => this.handleFsError(error, path));
   }
 
-  @RequirePermissions([{ permission: PERMISSIONS.FS.UPLOAD_FILE }])
+  @RequirePermissions([{ permission: 'fs.upload.file' }])
   @ApiOperation({ summary: 'Write file', description: 'Writes a file to the specified path' })
   @ApiResponse({ status: 200, description: 'The file details', type: FSNodeDTO })
   @ApiResponse({ status: 400, description: 'Bad request' })

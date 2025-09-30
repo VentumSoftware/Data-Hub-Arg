@@ -93,7 +93,7 @@ export class PermissionGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.get<PermissionCheck[]>('permissions', context.getHandler());
-    
+    //console.log('requiredPermissions', requiredPermissions)
     if (!requiredPermissions || requiredPermissions.length === 0) {
       return true; // No permissions required
     }
@@ -113,7 +113,7 @@ export class PermissionGuard implements CanActivate {
     try {
       // Get all user permissions from all sources
       const userPermissions = await this.getAllUserPermissions(user.id);
-      
+      //console.log('userPermissions', userPermissions?.map(p => ({...p, permission: this.normalizePermissionName(p.permission)})))
       // Check each required permission
       for (const requiredPermission of requiredPermissions) {
         // Normalize permission name for backwards compatibility
@@ -124,7 +124,7 @@ export class PermissionGuard implements CanActivate {
 
         const hasPermission = await this.checkPermission(
           normalizedPermission,
-          userPermissions,
+          userPermissions?.map(p => ({...p, permission: this.normalizePermissionName(p.permission)})),
           userAttributes,
           request
         );
@@ -168,7 +168,8 @@ export class PermissionGuard implements CanActivate {
    * Normalize permission name for backwards compatibility
    */
   private normalizePermissionName(permission: string): string {
-    return this.permissionAliases[permission] || permission;
+    let permissionName = permission.replaceAll(':', '.');
+    return permissionName;
   }
 
   /**
@@ -245,7 +246,7 @@ export class PermissionGuard implements CanActivate {
       // Otherwise, it's global (undefined scope)
 
       allPermissions.push({
-        permission: p.permission,
+        permission: this.normalizePermissionName(p.permission),
         scope: effectiveScope,
         source: 'role',
         sourceId: p.roleId,

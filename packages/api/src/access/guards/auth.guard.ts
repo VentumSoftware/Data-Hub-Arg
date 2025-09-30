@@ -106,7 +106,7 @@ export class AuthGuard implements CanActivate {
       return true;
     }
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(),]);
-    console.log('🔍 isPublic metadata:', isPublic);
+    console.log('🔍 isPublic metadata:', !!isPublic);
     if (isPublic) {
       return true;
     }

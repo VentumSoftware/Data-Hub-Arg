@@ -4,7 +4,7 @@ import { Response } from 'express';
 import { AccessService } from './access.service';
 import { AuthGuard } from './guards/auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { CanDeleteUsers, CanEditUsers, CanReadUsers } from './decorators/permissions.decorator';
+import { CanDeleteUsers, CanEditUsers, CanReadUsers, RequirePermissions } from './decorators/permissions.decorator';
 import { SessionConfig } from './config/session.config';
 import { Public } from './decorators/public.decorator';
 import { TokenAuthGuard } from './guards/token-auth.guard';
@@ -105,7 +105,7 @@ export class AccessController {
 
     @Get('users')
     @UseGuards(AuthGuard, PermissionGuard)
-@CanReadUsers() // ← Esto es equivalente a @RequirePermissions([{ permission: 'users.read' }])
+    @CanReadUsers() // ← Esto es equivalente a @RequirePermissions([{ permission: 'users.read' }])
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
     async getUsers(@Req() req) {
@@ -409,7 +409,8 @@ export class AccessController {
     };
 
     @Get('activity/user/:userId')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, PermissionGuard)
+    @CanReadUsers()
     @ApiOperation({
         summary: 'Get specific user activity log',
         description: 'Returns activity log for a specific user including logins and database changes'
@@ -533,7 +534,9 @@ export class AccessController {
     // ======================== PERMISSIONS MANAGEMENT ========================
 
     @Get('permissions')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, PermissionGuard)
+    @RequirePermissions([{ permission: 'permissions:read' }])
+
     @ApiOperation({
         summary: 'Get all system permissions',
         description: 'Returns all available permissions in the system with their metadata'
@@ -561,7 +564,8 @@ export class AccessController {
     };
 
     @Get('users/:userId/permissions')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, PermissionGuard)
+    @RequirePermissions([{ permission: 'permissions:read' }, { permission: 'users:read' }])
     @ApiOperation({
         summary: 'Get user permissions',
         description: 'Returns all permissions for a specific user from all sources (direct, roles, groups)'
@@ -588,7 +592,8 @@ export class AccessController {
     };
 
     @Get('roles')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, PermissionGuard)
+    @RequirePermissions([{ permission: 'roles:read' }])
     @ApiOperation({
         summary: 'Get all system roles',
         description: 'Returns all available roles in the system'

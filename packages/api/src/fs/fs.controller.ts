@@ -161,7 +161,7 @@ export class FsController {
     return await this.fsService.readFile(path).catch(error => this.handleFsError(error, path));
   }
 
-  @RequirePermissions([{ permission: 'fs.upload.file' }])
+  @RequirePermissions([{ permission: 'fs:upload:file' }])
   @ApiOperation({ summary: 'Write file', description: 'Writes a file to the specified path' })
   @ApiResponse({ status: 200, description: 'The file details', type: FSNodeDTO })
   @ApiResponse({ status: 400, description: 'Bad request' })

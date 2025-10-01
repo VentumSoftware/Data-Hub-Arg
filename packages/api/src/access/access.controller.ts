@@ -106,7 +106,7 @@ export class AccessController {
 
     @Get('users')
     @UseGuards(AuthGuard, PermissionGuard)
-    @RequirePermissions([{ permission: 'users.read' }])
+    @RequirePermissions([{ permission: 'users:read' }])
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
     async getUsers(@Req() req) {

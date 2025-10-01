@@ -168,7 +168,7 @@ export class PermissionGuard implements CanActivate {
    * Normalize permission name for backwards compatibility
    */
   private normalizePermissionName(permission: string): string {
-    let permissionName = permission.replaceAll(':', '.');
+    let permissionName = permission.replaceAll('.', ':');
     return permissionName;
   }
 

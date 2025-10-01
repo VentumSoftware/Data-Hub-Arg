@@ -20,15 +20,15 @@ const App = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/sign-in" element={<SignIn />} />
+      {/* <Route path="/sign-in" element={<SignIn />} /> */}
       <Route path="/indices/*" element={<Indexes />} />
-      <Route path="/dashboard" element={<AuthWrapper><Dashboard /></AuthWrapper>}>
+      {/* <Route path="/dashboard" element={<AuthWrapper><Dashboard /></AuthWrapper>}>
         <Route index element={<Users />} />
         <Route path="usuarios/*" element={<Users />} />
         <Route path="roles/*" element={<Roles />} />
         <Route path="files/*" element={<Files />} />
         <Route path="*" element={<Users />} />
-      </Route>
+      </Route> */}
       <Route path="*" element={<Error />} />
     </Routes>
   );

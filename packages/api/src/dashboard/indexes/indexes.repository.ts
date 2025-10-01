@@ -173,7 +173,7 @@ export class IndexesRepository {
             // const path = require('path');
             // fs.writeFileSync(path.join(__dirname, "inflationData.json"), JSON.stringify(inflationData, null, 2));
 
-            console.log(`Datos extraídos CPI: ${inflationData.length} registros`);
+            //console.log(`Datos extraídos CPI: ${inflationData.length} registros`);
             return inflationData;
 
         } catch (error) {
@@ -208,7 +208,7 @@ export class IndexesRepository {
             ]);
 
             const [datosInflation, datosCAC, datosUVA, datosUVI, datosDolares] = results.map((r, i) => {
-                console.log({ i, status: r.status });
+                //console.log({ i, status: r.status });
                 if (r.status === 'fulfilled') return r.value;
 
                 const key = Object.keys(endpoints)[i];
@@ -432,7 +432,7 @@ export class IndexesRepository {
             label: x.label,
             symbol: x.symbol,
         })) as Currency[];
-        console.log('currenciesData', currenciesData?.length);
+       // console.log('currenciesData', currenciesData?.length);
         const currenciesRelationsData = (await this.db.db.select().from(currenciesRelations))
         const updatedIndexes = await getUpdatedIndexes();
         let res = await syncToDatabase(currenciesData, currenciesRelationsData, currencyIndexesData, updatedIndexes);

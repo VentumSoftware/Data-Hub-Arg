@@ -88,13 +88,13 @@ async function bootstrap() {
 
   console.log(`🚀 Application is running on: http://localhost:${port}/api`);
   console.log(`📚 API documentation available at: http://localhost:${port}/api/docs`);
-  console.log(`📝 Environment variables for PSQ: `, {
-    POSTGRES_DB: process.env.POSTGRES_DB,
-    POSTGRES_USER: process.env.POSTGRES_USER,
-    POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
-    POSTGRES_PORT: process.env.POSTGRES_PORT,
-    POSTGRES_HOST: process.env.POSTGRES_HOST,
-    DATABASE_URL: process.env.DATABASE_URL
-  });
+  // console.log(`📝 Environment variables for PSQ: `, {
+  //   POSTGRES_DB: process.env.POSTGRES_DB,
+  //   POSTGRES_USER: process.env.POSTGRES_USER,
+  //   POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
+  //   POSTGRES_PORT: process.env.POSTGRES_PORT,
+  //   POSTGRES_HOST: process.env.POSTGRES_HOST,
+  //   DATABASE_URL: process.env.DATABASE_URL
+  // });
 }
 bootstrap();

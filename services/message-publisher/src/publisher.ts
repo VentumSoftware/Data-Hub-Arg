@@ -34,7 +34,7 @@ interface CDCOutboxConfig {
 }
 
 interface CDCMessage {
-  id: number;
+  id: number | string;
  // table_name: string;
  _cdc_operation: string;
  _cdc_acknowledge: boolean;
@@ -225,10 +225,10 @@ export class CDCOutboxPublisher {
     }
     
     try {
-      console.log('Before fetchPendingMessages', tableName);
+      //console.log('Before fetchPendingMessages', tableName);
       // Fetch pending messages
       const messages = await this.fetchPendingMessages(tableName);
-      console.log('After fetchPendingMessages', messages, tableName);
+      //console.log('After fetchPendingMessages', messages, tableName);
       if (messages.length === 0) {
         return;
       }
@@ -237,7 +237,7 @@ export class CDCOutboxPublisher {
       
       // Process each message
       for (const message of messages) {
-        console.log('message', message);
+        //console.log('Publisher.ts processTableMessages: message', message);
         await this.processMessage(tableName, message);
       }
       
@@ -266,7 +266,7 @@ export class CDCOutboxPublisher {
     // Generar metadatos de mensajería dinámicamente
     const topic = this.config.cdc_outbox.config.default_topic;
     const routingKey = `${baseTableName}.${message._cdc_operation}`;
-    const messageId = `cdc_${tableName}_${message.id}_${Date.now()}`;
+    const messageId = `cdc_${tableName}_${message._cdc_id}_${Date.now()}`;
     
     const payload = this.prepareMessagePayload(tableName, message);
     
@@ -276,8 +276,6 @@ export class CDCOutboxPublisher {
       priority: 'normal',
     });
     
-    // Marcar como procesado
-    //await this.markMessageAsAcknowledged(tableName, message.id);
     
     this.logger.debug(`Published ${baseTableName}.${message._cdc_operation} message ${messageId}`);
     
@@ -288,7 +286,7 @@ export class CDCOutboxPublisher {
 
 private prepareMessagePayload(tableName: string, message: CDCMessage): any {
   const baseTableName = tableName.substring(5); // quita '_cdc_'
-  
+  //console.log('prepareMessagePayload Publisher.ts: message', message.id);
   // Crear copia sin campos técnicos de CDC
   const { _cdc_operation, _cdc_acknowledge, _cdc_timestamp, is_deleted, ...rowData } = message;
   
@@ -346,80 +344,6 @@ private prepareMessagePayload(tableName: string, message: CDCMessage): any {
     if (value instanceof Date) return `'${value.toISOString()}'`;
     if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
     return value.toString();
-  }
-
-  private async handleMessageError(
-    tableName: string,
-    message: CDCMessage,
-    error: Error,
-    processingTimeMs: number
-  ) {
-    const newRetryCount = message.retry_count + 1;
-    const shouldRetry = newRetryCount <= message.max_retries;
-    
-    this.logger.error({
-      error: error.message,
-      retryCount: newRetryCount,
-      willRetry: shouldRetry,
-    }, `Failed to publish message ${message.message_id}`);
-    
-    if (shouldRetry) {
-      // Calculate next retry time with exponential backoff
-      const backoffSeconds = Math.pow(
-        this.config.cdc_outbox.publisher.retry_backoff_multiplier,
-        newRetryCount
-      ) * this.config.cdc_outbox.publisher.retry_backoff_base_seconds;
-      
-      const nextRetryAt = new Date(Date.now() + backoffSeconds * 1000);
-      
-      // await this.updateMessageStatus(tableName, message.id, 'failed', {
-      //   retry_count: newRetryCount,
-      //   next_retry_at: nextRetryAt,
-      //   failed_at: new Date(),
-      //   last_error: error.message,
-      // });
-    } else {
-      // Mark as dead
-      // await this.updateMessageStatus(tableName, message.id, 'dead', {
-      //   retry_count: newRetryCount,
-      //   failed_at: new Date(),
-      //   last_error: error.message,
-      // });
-      
-      // Send to DLQ if configured
-      //await this.sendToDeadLetterQueue(message, error);
-    }
-  }
-
-  private async sendToDeadLetterQueue(message: CDCMessage, error: Error) {
-    try {
-      const dlqTopic = `${message.topic}.dlq`;
-      await this.queueManager.publish(
-        dlqTopic,
-        message.routing_key,
-        {
-          originalMessage: message,
-          error: {
-            message: error.message,
-            stack: error.stack,
-            timestamp: new Date().toISOString(),
-          },
-          metadata: {
-            originalTopic: message.topic,
-            retryCount: message.retry_count,
-            maxRetries: message.max_retries,
-          },
-        },
-        {
-          messageId: message.message_id,
-          correlationId: message.correlation_id,
-        }
-      );
-      
-      this.logger.info(`Sent message ${message.message_id} to DLQ: ${dlqTopic}`);
-    } catch (dlqError) {
-      this.logger.error({ error: dlqError }, `Failed to send message to DLQ`);
-    }
   }
 
   private setupMaintenanceJobs() {

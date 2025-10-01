@@ -18,7 +18,7 @@ import { MessagingModule } from './messaging/message-consumer.module';
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     AccessModule,
     DatabaseModule,
-    FsModule,
+    //FsModule,
     IndexesModule,
     MessagingModule,
   ],

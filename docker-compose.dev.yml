@@ -17,11 +17,11 @@ services:
     networks:
       - app-network-dev
     restart: unless-stopped
-    # healthcheck:
-    #   test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}" ]
-    #   interval: 1000000s
-    #   timeout: 5s
-    #   retries: 5
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   # API Service with hot-reload
   api:
@@ -157,16 +157,16 @@ services:
       - app-network-dev
     restart: unless-stopped
 
+  # SFTP Server
   sftp:
-    image: atmoz/sftp:alpine
+    image: atmoz/sftp:latest
     container_name: ${APP_NAME:-app}-sftp-dev
+    environment:
+      SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
     ports:
       - "${SFTP_PORT:-2222}:22"
     volumes:
-      - sftp_dev_data:/home/app_user/uploads
-    command: 
-      - "app_user:app_sftp_password:1001:1001:uploads"
-      # Nota: 'uploads' en plural para evitar conflicto con volumen existente
+      - sftp_dev_data:/home/${SFTP_USERNAME:-app_user}/upload
     networks:
       - app-network-dev
     restart: unless-stopped
@@ -248,30 +248,35 @@ services:
       - app-network-dev
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U plausible" ]
+      test: [ "CMD-SHELL", "pg_isready -U plausible -d plausible" ]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   # Plausible Analytics
   plausible:
     image: plausible/analytics:v2.0.0
     container_name: ${APP_NAME:-app}-plausible-dev
-    command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 20 &&
+        /entrypoint.sh db createdb &&
+        echo 'Database created' &&
+        /entrypoint.sh db migrate &&
+        echo 'Migrations completed' &&
+        /entrypoint.sh run
+      "
     environment:
       BASE_URL: ${PLAUSIBLE_BASE_URL:-http://localhost:8000}
-      SECRET_KEY_BASE: ${PLAUSIBLE_SECRET_KEY:-insecure-64-character-secret-key-for-development-only-change-this}
+      SECRET_KEY_BASE: ${PLAUSIBLE_SECRET_KEY:-insecure-64-character-secret-key-for-development-only-change-this-1234567890123456789012345678901234567890123456789012345678901234}
       DATABASE_URL: postgresql://plausible:${PLAUSIBLE_DB_PASSWORD:-plausible_password}@plausible_db:5432/plausible
       DISABLE_REGISTRATION: ${PLAUSIBLE_DISABLE_REGISTRATION:-false}
       MAILER_EMAIL: ${PLAUSIBLE_MAILER_EMAIL:-hello@plausible.local}
-      SMTP_HOST_ADDR: ${SMTP_HOST_ADDR:-localhost}
-      SMTP_HOST_PORT: ${SMTP_HOST_PORT:-25}
-      TOTP_VAULT_KEY: ${PLAUSIBLE_TOTP_VAULT_KEY:-Ak6BqSWnhuP7JEtHSY0r6QOcMORG4ZoJ_7CA}
-      # Auto-configuration environment variables
-      PLAUSIBLE_ADMIN_NAME: ${PLAUSIBLE_ADMIN_NAME:-Admin User}
-      PLAUSIBLE_ADMIN_EMAIL: ${PLAUSIBLE_ADMIN_EMAIL:-admin@localhost}
-      PLAUSIBLE_ADMIN_PASSWORD: ${PLAUSIBLE_ADMIN_PASSWORD:-admin123}
-      PLAUSIBLE_SITE_DOMAIN: ${PLAUSIBLE_SITE_DOMAIN:-localhost}
+      ADMIN_USER_NAME: ${PLAUSIBLE_ADMIN_NAME:-Admin User}
+      ADMIN_USER_EMAIL: ${PLAUSIBLE_ADMIN_EMAIL:-admin@localhost}
+      ADMIN_USER_PWD: ${PLAUSIBLE_ADMIN_PASSWORD:-admin123}
     ports:
       - "${PLAUSIBLE_PORT:-8000}:8000"
     depends_on:
@@ -280,6 +285,7 @@ services:
     networks:
       - app-network-dev
     restart: unless-stopped
+
 
 networks:
   app-network-dev:

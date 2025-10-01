@@ -76,7 +76,8 @@ export class AccessService {
         editedBy: 1,
       }).returning();
       // Hay que darle un rol "guest" por default
-      const roleUser = await this.db.select().from(this.roles).where(eq(this.roles.name, 'guest'));
+      //const roleUser = await this.db.select().from(this.roles).where(eq(this.roles.name, 'guest'));
+       const roleUser = await this.db.select().from(this.roles).where(eq(this.roles.name, 'admin'));
       await this.db.insert(this.usersRolesMap).values({
         userId: user.id,
         roleId: roleUser[0].id,

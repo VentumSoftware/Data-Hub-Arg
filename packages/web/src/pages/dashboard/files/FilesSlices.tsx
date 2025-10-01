@@ -21,7 +21,7 @@ export const getData = createAsyncThunk(
         return { nodes: nodes?.childs };
     },
 );
-
+ 
 export const createFolder = createAsyncThunk(
     'FILES_CREATE_FOLDER',
     async (_payload, _thunkAPI) => {

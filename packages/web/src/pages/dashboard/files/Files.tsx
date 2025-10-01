@@ -9,7 +9,6 @@ import { getData, FSNodeDTO, deleteNode, createFile, createFolder, renameNode, s
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { useEffect, useState } from 'react';
-
 export default function Files() {
 
     const dispatch = useDispatch<AppDispatch>();

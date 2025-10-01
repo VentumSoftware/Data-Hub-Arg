@@ -70,7 +70,7 @@ export class MessageConsumerService implements OnModuleInit, OnModuleDestroy {
         this.logger.debug('Message payload details:', {
             table,
             operation,
-            dataId: data?.id,
+            dataId: data?._cdc_id,
             dataKeys: Object.keys(data || {})
         });
         if (!table) {
@@ -78,7 +78,7 @@ export class MessageConsumerService implements OnModuleInit, OnModuleDestroy {
             throw new Error('Message missing table information');
         }
 
-        if (!data?.id) {
+        if (!data?.id && !data?._cdc_id) {
             this.logger.error('Message missing record ID:', message);
             throw new Error('Message missing record ID');
         }
@@ -103,7 +103,7 @@ export class MessageConsumerService implements OnModuleInit, OnModuleDestroy {
     // packages/api/src/messaging/message-consumer.service.ts
     private async markMessageAsAcknowledged(message: any) {
         const { table, data } = message.payload;
-        const recordId = data.id;
+        const recordId = data._cdc_id;
 
         try {
             // ✅ CORREGIDO: Verificar que la tabla y el ID existen
@@ -112,10 +112,10 @@ export class MessageConsumerService implements OnModuleInit, OnModuleDestroy {
             }
 
             const cdcTableName = `_cdc_${table}`;
-
+            console.log({cdcTableName}, {recordId});
             // ✅ CORREGIDO: Usar el nombre de tabla completo
             const result = (await this.databaseService.db.execute(
-                sql`UPDATE ${sql.identifier(cdcTableName)} SET _cdc_acknowledge = true WHERE id = ${recordId}`
+                sql`UPDATE ${sql.identifier(cdcTableName)} SET _cdc_acknowledge = true WHERE _cdc_id = ${recordId}`
             )).rows[0];
 
             this.logger.debug(`Marked CDC record ${recordId} from ${cdcTableName} as acknowledged`);

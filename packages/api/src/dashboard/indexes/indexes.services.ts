@@ -23,6 +23,7 @@ export class IndexesService {
     // };
 
     async updateIndexes() {
+        this.logger.log('Ejecutando updateIndexes...');
         let res = await this.indexesRepository.updateIndexes();
         return res;
     }

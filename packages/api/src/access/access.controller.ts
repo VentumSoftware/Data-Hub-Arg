@@ -17,7 +17,7 @@ import { AuthToken } from './decorators/auth-token.decorator';
 export class AccessController {
     constructor(private readonly accessService: AccessService) { }
 
-    @Public()
+    //@Public()
     @Get('google')
     @UseGuards(PassportAuthGuard('google'))
     async googleAuth(@Req() req, @Res() res: Response) {
@@ -36,7 +36,7 @@ export class AccessController {
         // Redirects to Google for authentication
     };
 
-    @Public()
+    //@Public()
     @Get('google/redirect')
     @UseGuards(PassportAuthGuard('google'))
     async googleAuthRedirect(@Req() req, @Res() res: Response) {
@@ -82,6 +82,7 @@ export class AccessController {
     };
 
     @Get('test-session')
+    @UseGuards(AuthGuard)
     testSession(@Req() req) {
         req.session.test = 'test-value';
         console.log('Session ID:', req.sessionID);
@@ -105,10 +106,11 @@ export class AccessController {
 
     @Get('users')
     @UseGuards(AuthGuard, PermissionGuard)
-    @CanReadUsers() // ← Esto es equivalente a @RequirePermissions([{ permission: 'users.read' }])
+    @RequirePermissions([{ permission: 'users.read' }])
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
     async getUsers(@Req() req) {
+        console.log('getUsers', req.user.permissions);
         return {
             success: true,
             data: await this.accessService.getUsers()
@@ -536,7 +538,6 @@ export class AccessController {
     @Get('permissions')
     @UseGuards(AuthGuard, PermissionGuard)
     @RequirePermissions([{ permission: 'permissions:read' }])
-
     @ApiOperation({
         summary: 'Get all system permissions',
         description: 'Returns all available permissions in the system with their metadata'

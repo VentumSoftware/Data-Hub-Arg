@@ -9,15 +9,15 @@ export class IndexesCronService {
     constructor(private readonly indexesService: IndexesService) { }
 
     //Se ejecuta al iniciar la aplicación
-    // async onApplicationBootstrap() {
-    //     this.logger.log('Ejecutando updateIndexes al iniciar la aplicación...');
-    //     try {
-    //         await this.indexesService.updateIndexes();
-    //         this.logger.log('updateIndexes ejecutado exitosamente al iniciar');
-    //     } catch (error) {
-    //         this.logger.error('Error ejecutando updateIndexes al iniciar:', error);
-    //     }
-    // }
+    async onApplicationBootstrap() {
+        this.logger.log('Ejecutando updateIndexes al iniciar la aplicación...');
+        try {
+            await this.indexesService.updateIndexes();
+            this.logger.log('updateIndexes ejecutado exitosamente al iniciar');
+        } catch (error) {
+            this.logger.error('Error ejecutando updateIndexes al iniciar:', error);
+        }
+    }
 
     // Se ejecuta todos los días a las 4:00 AM
     // Expresiones predefinidas útiles:

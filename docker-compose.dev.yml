@@ -9,13 +9,14 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-app_main}
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+    # Add external port for database clients (different from soft-compass)
     ports:
-      - "5433:5432"
+      - "${POSTGRES_EXTERNAL_PORT:-5434}:5432"
+    networks:
+      - app-network-dev
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
-    networks:
-      - app-network-dev
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user}" ]
@@ -36,15 +37,15 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-app_main}
       POSTGRES_USER: ${POSTGRES_USER:-app_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password} # Application configuration
- 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      # Application configuration
       APP_NAME: ${APP_NAME:-app}
       COOKIE_SECRET: ${COOKIE_SECRET:-your-cookie-secret-here-change-in-production}
       SESSION_EXPIRATION_MINUTES: ${SESSION_EXPIRATION_MINUTES:-120}
       GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
       GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
-      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL:-http://localhost:3000/api/access/google/redirect}
-      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL:-http://localhost:5173} # System user configuration
+      GOOGLE_AUTH_CALLBACK_URL: ${GOOGLE_AUTH_CALLBACK_URL:-http://localhost:8080/api/access/google/redirect}
+      GOOGLE_AUTH_RETURN_URL: ${GOOGLE_AUTH_RETURN_URL:-http://localhost:8080}
       SYSTEM_USER_EMAIL: ${SYSTEM_USER_EMAIL:-system@template.com}
       SYSTEM_USER_ALIAS: ${SYSTEM_USER_ALIAS:-System}
       SYSTEM_USER_FIRST_NAME: ${SYSTEM_USER_FIRST_NAME:-System}
@@ -53,15 +54,15 @@ services:
       SFTP_PORT: 22
       SFTP_USERNAME: ${SFTP_USERNAME:-app_user}
       SFTP_PASSWORD: ${SFTP_PASSWORD:-app_sftp_password}
-      FE_URL: ${FE_URL:-http://localhost:5173}
+      FE_URL: ${FE_URL:-http://localhost:8080}
       OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_REQUESTS: ${LOG_REQUESTS:-false}
       CORS_ORIGIN: ${CORS_ORIGIN}
       AUTH_TOKEN: ${AUTH_TOKEN}
+    # Add debugging port (different from soft-compass)
     ports:
-      - "${API_PORT:-3000}:3000"
-      - "9229:9229" # Node.js debugging port
+      - "9230:9229"  # Node.js debugging port
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,12 +74,11 @@ services:
       - app-network-dev
     restart: unless-stopped
     volumes:
-      # Mount source code for hot-reload
       - ./packages/api:/app
       - ./packages/shared:/app/shared
-      # Prevent node_modules from being overwritten
       - api_node_modules:/app/node_modules
       - ./packages/api/upload:/app/upload
+      - api_logs:/app/logs
     command: npm run dev
 
   # Web Application with hot-reload
@@ -90,14 +90,12 @@ services:
     environment:
       - VITE_HOST=0.0.0.0
       - VITE_PORT=5173
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
-      - VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN:-localhost}
-      - VITE_PLAUSIBLE_URL=${VITE_PLAUSIBLE_URL:-http://localhost:8000}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
       - VITE_SITE_NAME=${VITE_SITE_NAME:-My App}
+      - VITE_HMR_CLIENT_PORT=${VITE_HMR_CLIENT_PORT:-8080}
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes in Docker
       - WATCHPACK_POLLING=true
-    ports:
-      - "${WEB_PORT:-5173}:5173"
+    # No external ports - only accessible via nginx
     volumes:
       # Mount source code for hot-reload
       - ./packages/web:/app
@@ -109,6 +107,24 @@ services:
     stdin_open: true
     tty: true
 
+  # Nginx Reverse Proxy - ONLY external access point
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME:-app}-nginx-dev
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./services/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./services/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+    networks:
+      - app-network-dev
+    restart: unless-stopped
+
   # RabbitMQ Message Broker
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -117,9 +133,9 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    # Add management UI port (different from soft-compass)
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15673}:15672"
     volumes:
       - rabbitmq_dev_data:/var/lib/rabbitmq
     networks:
@@ -130,7 +146,6 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
-
   # Message Publisher Service
   message-publisher:
     build:
@@ -163,8 +178,9 @@ services:
     container_name: ${APP_NAME:-app}-sftp-dev
     environment:
       SFTP_USERS: "${SFTP_USERNAME:-app_user}:${SFTP_PASSWORD:-app_sftp_password}:1001:1001:upload"
+    # Add external port (different from soft-compass)
     ports:
-      - "${SFTP_PORT:-2222}:22"
+      - "${SFTP_PORT:-2223}:22"
     volumes:
       - sftp_dev_data:/home/${SFTP_USERNAME:-app_user}/upload
     networks:
@@ -178,8 +194,8 @@ services:
       - discovery.type=single-node
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - plugins.security.disabled=true
-      - cluster.name=app-logs-dev
-      - node.name=app-node-dev-1
+      - cluster.name=indexes-app-logs-dev  # Different cluster name
+      - node.name=indexes-app-node-dev-1   # Different node name
       - bootstrap.memory_lock=true
     ulimits:
       memlock:
@@ -187,9 +203,10 @@ services:
         hard: -1
     volumes:
       - opensearch_dev_data:/usr/share/opensearch/data
+    # Add external ports (different from soft-compass)
     ports:
-      - "${OPENSEARCH_PORT:-9200}:9200"
-      - "${OPENSEARCH_TRANSPORT_PORT:-9300}:9300"
+      - "${OPENSEARCH_PORT:-9201}:9200"
+      - "${OPENSEARCH_TRANSPORT_PORT:-9301}:9300"
     networks:
       - app-network-dev
     restart: unless-stopped
@@ -198,6 +215,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
   # OpenSearch Dashboards for log visualization
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.11.1
@@ -220,8 +238,9 @@ services:
         echo 'opensearch.ssl.verificationMode: none' >> /usr/share/opensearch-dashboards/config/opensearch_dashboards.yml;
         ./opensearch-dashboards-docker-entrypoint.sh
       "
+    # Add external port (different from soft-compass)
     ports:
-      - "${OPENSEARCH_DASHBOARDS_PORT:-5601}:5601"
+      - "${OPENSEARCH_DASHBOARDS_PORT:-5602}:5601"
     depends_on:
       opensearch:
         condition: service_healthy
@@ -234,57 +253,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # Plausible Analytics Database (separate from app database)
-  plausible_db:
-    image: postgres:15-alpine
-    container_name: ${APP_NAME:-app}-plausible-postgres-dev
-    environment:
-      POSTGRES_DB: plausible
-      POSTGRES_USER: plausible
-      POSTGRES_PASSWORD: ${PLAUSIBLE_DB_PASSWORD:-plausible_password}
-    volumes:
-      - plausible_db_data:/var/lib/postgresql/data
-    networks:
-      - app-network-dev
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U plausible -d plausible" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  # Plausible Analytics
-  plausible:
-    image: plausible/analytics:v2.0.0
-    container_name: ${APP_NAME:-app}-plausible-dev
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 20 &&
-        /entrypoint.sh db createdb &&
-        echo 'Database created' &&
-        /entrypoint.sh db migrate &&
-        echo 'Migrations completed' &&
-        /entrypoint.sh run
-      "
-    environment:
-      BASE_URL: ${PLAUSIBLE_BASE_URL:-http://localhost:8000}
-      SECRET_KEY_BASE: ${PLAUSIBLE_SECRET_KEY:-insecure-64-character-secret-key-for-development-only-change-this-1234567890123456789012345678901234567890123456789012345678901234}
-      DATABASE_URL: postgresql://plausible:${PLAUSIBLE_DB_PASSWORD:-plausible_password}@plausible_db:5432/plausible
-      DISABLE_REGISTRATION: ${PLAUSIBLE_DISABLE_REGISTRATION:-false}
-      MAILER_EMAIL: ${PLAUSIBLE_MAILER_EMAIL:-hello@plausible.local}
-      ADMIN_USER_NAME: ${PLAUSIBLE_ADMIN_NAME:-Admin User}
-      ADMIN_USER_EMAIL: ${PLAUSIBLE_ADMIN_EMAIL:-admin@localhost}
-      ADMIN_USER_PWD: ${PLAUSIBLE_ADMIN_PASSWORD:-admin123}
-    ports:
-      - "${PLAUSIBLE_PORT:-8000}:8000"
-    depends_on:
-      plausible_db:
-        condition: service_healthy
-    networks:
-      - app-network-dev
-    restart: unless-stopped
 
 
 networks:
@@ -304,9 +272,9 @@ volumes:
     driver: local
   api_node_modules:
     driver: local
+  api_logs:
+    driver: local
   web_node_modules:
     driver: local
   message_publisher_node_modules:
-    driver: local
-  plausible_db_data:
     driver: local

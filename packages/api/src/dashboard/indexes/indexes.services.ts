@@ -28,9 +28,4 @@ export class IndexesService {
         return res;
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_4AM)
-    async handleDailyUpdate() {
-        this.logger.log('Ejecutando updateIndexes programado (4:00 AM)...');
-        await this.updateIndexes();
-    }
 }

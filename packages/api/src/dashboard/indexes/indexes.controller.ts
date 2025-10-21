@@ -8,7 +8,7 @@ import { Public } from '../../access/decorators/public.decorator';
 import { TokenAuthGuard } from '../../access/guards/token-auth.guard';
 import { AuthToken } from '../../access/decorators/auth-token.decorator';
 @Controller('indexes')
-@UseGuards(TokenAuthGuard, AuthGuard, PermissionGuard) 
+@UseGuards(TokenAuthGuard, AuthGuard, PermissionGuard)
 export class IndexesController {
     constructor(private readonly currencyConverter: CurrencyConverterService, private readonly indexesService: IndexesService) { }
 
@@ -81,6 +81,12 @@ export class IndexesController {
         // Add method to get all currencies
         return await this.currencyConverter.getAllCurrencies();
     };
+
+    @Public()
+    @Get('relations')
+    async getAllRelations() {
+        return await this.currencyConverter.getAllRelations();
+    }
 
     @Public()
     @Get('currencies/:id/relations')

@@ -36,6 +36,14 @@ interface Currency {
     label: string;
     symbol: string;
 }
+interface Relation {
+    id: number;
+    dividendId: number;
+    divisorId: number;
+    op: 'direct' | 'inverse' | 'both';
+    source: string;
+}
+
 const generateDateArrayUntilToday = (startDateStr: String, endDateStr = null) => {
     // Crear la date de inicio en UTC
     const startDate = new Date(Date.UTC(
@@ -432,12 +440,27 @@ export class IndexesRepository {
             label: x.label,
             symbol: x.symbol,
         })) as Currency[];
-       // console.log('currenciesData', currenciesData?.length);
+        // console.log('currenciesData', currenciesData?.length);
         const currenciesRelationsData = (await this.db.db.select().from(currenciesRelations))
         const updatedIndexes = await getUpdatedIndexes();
         let res = await syncToDatabase(currenciesData, currenciesRelationsData, currencyIndexesData, updatedIndexes);
         return res
     };
 
+    async getAllRelations(): Promise<Relation[]> {
+        const result = await this.db.db
+            .select()
+            .from(currenciesRelations)
+            .where(eq(currenciesRelations.isDeleted, false));
+
+        return result.map(r => ({
+            id: r.id,
+            dividendId: r.dividendId,
+            divisorId: r.divisorId,
+            op: r.op,
+            label: '', // O algún label derivado
+            source: r.source
+        }));
+    }
 
 }

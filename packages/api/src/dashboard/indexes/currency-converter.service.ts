@@ -1,10 +1,11 @@
+// src/dashboard/indexes/currency-converter.service.ts
 import { Injectable } from '@nestjs/common';
 import { eq, and, or, gte, lte, desc, asc, sql, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { isSameDay } from '../../../lib/index';
 import { DatabaseService } from 'src/database/database.service';
 import { currencies, currenciesRelations, currencyIndexes } from '../../../drizzle/schema';
-
+import { IndexesRepository } from './indexes.repository';
 export type Currency = {
     id: number;
     code: string;
@@ -54,7 +55,7 @@ const defaultOptions: ConversionOptions = {
 
 @Injectable()
 export class CurrencyConverterService {
-    constructor(private db: DatabaseService) {}
+    constructor(private db: DatabaseService, private indexesRepository: IndexesRepository) {}
 
     private summarizeRelations(relations: { relation: Relation, value: number | null }[], summarize: 'average' | 'min' | 'max'): number {
         const values = relations.map(x => x.value).filter(v => v !== null) as number[];
@@ -696,5 +697,9 @@ export class CurrencyConverterService {
             console.error('Error in getHistoricalIndexesByDates:', error);
             throw error;
         }
+    }
+
+   async getAllRelations() {
+        return this.db.db.select().from(currenciesRelations);
     }
 }

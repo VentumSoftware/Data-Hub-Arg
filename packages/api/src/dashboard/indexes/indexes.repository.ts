@@ -270,6 +270,15 @@ export class IndexesRepository {
                     return _month === month && _year === year;
                 });
 
+                const cacMinu2Index = datosCAC.find((x: CacData) => {
+                    //Acá lo que se debe hacer es encontrar desde la fecha el valor del cac de 2 meses atras. Por ejemplo si la fecha es 2023-01-01, entonces se debe buscar el cac de 2022-11-01
+                    const dateMinus2 = new Date(d);
+                    dateMinus2.setMonth(dateMinus2.getMonth() - 2);
+                    const [year, month] = dateMinus2.toISOString().split('-');
+                    const [_year, _month] = x.period.split('-');
+                    return _month === month  && _year === year;
+                })
+
                 const uvaIndex = datosUVA.find((x: UvaUviData) => {
                     const [_day, _month, _year] = x.fecha.split('-');
                     return _day === day && _month === month && _year === year;
@@ -288,6 +297,7 @@ export class IndexesRepository {
                     date: d,
                     ...dolarMap[d],
                     cac: cacIndex,
+                    cacMinus2: cacMinu2Index,
                     uva: uvaIndex?.valor,
                     uvi: uviIndex?.valor,
                     cpi: dolarAbsolutoIndex?.valor,
@@ -307,6 +317,7 @@ export class IndexesRepository {
             const pesoId = findCurrencyId('peso');
             const cpiId = findCurrencyId('cpi');
             const cacId = findCurrencyId('cac');
+            const cacMinus2 = findCurrencyId('cac_minus_2');
             const uvaId = findCurrencyId('uva');
             const mepCompraId = findCurrencyId('dolar_mep_compra');
             const mepVentaId = findCurrencyId('dolar_mep_venta');
@@ -326,6 +337,7 @@ export class IndexesRepository {
             const relationPesoCPIId = findRelationId(cpiId, pesoId);
             const relationMepCPIId = findRelationId(cpiId, mepCompraId);
             const relationCACPesoId = findRelationId(pesoId, cacId);
+            const relationCACMinus2PesoId = findRelationId(pesoId, cacMinus2);
             const relationUVAPesoId = findRelationId(pesoId, uvaId);
             const relationDolarLibreCompraPesoId = findRelationId(pesoId, dolarBlueCompraId);
             const relationDolarLibreVentaPesoId = findRelationId(pesoId, dolarBlueVentaId);
@@ -410,6 +422,12 @@ export class IndexesRepository {
                     await this.db.db.insert(currencyIndexes).values({ date, currenciesRelationsId: relationCACPesoId, value: updatedIndexes[i].cac.general });
                 }
 
+                  // CAC Minus 2
+                if (updatedIndexes[i].cacMinus2 && !dbIndexes.find(x => x.currenciesRelationsId === relationCACMinus2PesoId)) {
+                    await this.db.db.insert(currencyIndexes).values({ date, currenciesRelationsId: relationCACMinus2PesoId, value: updatedIndexes[i].cacMinus2.general });
+                }
+
+
                 // UVA
                 if (updatedIndexes[i].uva && !dbIndexes.find(x => x.date === date && x.currenciesRelationsId === relationUVAPesoId)) {
                     await this.db.db.insert(currencyIndexes).values({ date, value: updatedIndexes[i].uva, currenciesRelationsId: relationUVAPesoId });
@@ -421,6 +439,7 @@ export class IndexesRepository {
                 updatedIndexes: updatedIndexes.length,
                 dbIndexes: dbIndexes.length,
                 relationCACPesoId,
+                relationCACMinus2PesoId,
                 relationDolarCclCompraPesoId,
                 relationDolarCclVentaPesoId,
                 relationDolarMayoristaCompraPesoId,

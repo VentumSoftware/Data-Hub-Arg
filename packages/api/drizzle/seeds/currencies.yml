@@ -13,6 +13,10 @@ currencies:
   - code: cac
     label: CAC
     symbol: cac
+
+  - code: cac_minus_2
+    label: CAC -2
+    symbol: cac:minus:2
   
   - code: uva
     label: UVA

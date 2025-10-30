@@ -55,11 +55,11 @@ const defaultOptions: ConversionOptions = {
 
 @Injectable()
 export class CurrencyConverterService {
-    constructor(private db: DatabaseService, private indexesRepository: IndexesRepository) {}
+    constructor(private db: DatabaseService, private indexesRepository: IndexesRepository) { }
 
     private summarizeRelations(relations: { relation: Relation, value: number | null }[], summarize: 'average' | 'min' | 'max'): number {
         const values = relations.map(x => x.value).filter(v => v !== null) as number[];
-        
+
         switch (summarize) {
             case 'average':
                 return values.reduce((p, x) => p + x, 0) / values.length;
@@ -75,10 +75,10 @@ export class CurrencyConverterService {
             // Database: dividendId/divisorId = value (e.g., Peso/DolarMEP = 162.85 means 1 DolarMEP = 162.85 Pesos)
             // If going from divisor to dividend (DolarMEP→Peso): use value directly
             // If going from dividend to divisor (Peso→DolarMEP): use 1/value
-            
+
             const isFromDivisorToDividend = (relation.divisorId === fromCurrencyId && relation.dividendId === toCurrencyId);
             const isFromDividendToDivisor = (relation.dividendId === fromCurrencyId && relation.divisorId === toCurrencyId);
-            
+
             let result;
             if (isFromDivisorToDividend) {
                 result = value; // DolarMEP→Peso: use value directly
@@ -87,7 +87,7 @@ export class CurrencyConverterService {
             } else {
                 throw new Error(`Invalid currency relation: ${fromCurrencyId} → ${toCurrencyId}`);
             }
-            
+
             console.log('🔬 Relation direction analysis:', {
                 fromCurrencyId,
                 toCurrencyId,
@@ -97,7 +97,7 @@ export class CurrencyConverterService {
                 isFromDividendToDivisor,
                 finalValue: result
             });
-            
+
             return result;
         };
 
@@ -201,12 +201,12 @@ export class CurrencyConverterService {
     private async getStepRelation(date: Date, step: PathStep, options?: ConversionOptions): Promise<number> {
         const _options = { ...defaultOptions, ...options };
         const relations = [];
-        
+
         for (const relation of step.relations) {
             const indexValue = await this.getRelationValue(step.fromCurrencyId, step.toCurrencyId, relation, date, _options);
             relations.push({ relation, value: indexValue });
         }
-        
+
         return this.summarizeRelations(relations, _options.summarize!);
     }
 
@@ -244,15 +244,15 @@ export class CurrencyConverterService {
 
         // Group relations by fromCurrencyId and toCurrencyId
         const groupedSteps: PathStep[] = [];
-        
+
         for (const relation of allRelations) {
             const pair = [relation.dividendId, relation.divisorId];
             const nextCurrencyId = pair.find(id => id !== fromCurrencyId);
-            
+
             if (!nextCurrencyId) continue;
-            
+
             let existingGroup = groupedSteps.find(g => g.toCurrencyId === nextCurrencyId);
-            
+
             if (existingGroup) {
                 existingGroup.relations.push({
                     dividendId: relation.dividendId,
@@ -306,33 +306,33 @@ export class CurrencyConverterService {
             console.log('✅ Same currency and date conversion, returning original value:', value);
             return value;
         }
-        
+
         const fromPath = await this.getPath(from.currencyId, constantCurrencyId);
         const toPath = await this.getPath(constantCurrencyId, to.currencyId);
-        
+
         console.log('📍 Paths found:', {
             fromPath: fromPath?.length || 0,
             toPath: toPath?.length || 0,
             fromPathDetails: fromPath,
             toPathDetails: toPath
         });
-        
+
         if (!fromPath || !toPath) {
             throw new Error(`No conversion path found between currencies`);
         }
-        
+
         console.log('🔍 Calculating fromRelation: Peso->DolarMEP on', from.date.toISOString().split('T')[0]);
         const fromRelation = await this.getPathRelation(from.date, fromPath, options);
-        
+
         console.log('🔍 Calculating toRelation: DolarMEP->Peso on', to.date.toISOString().split('T')[0]);
         const toRelation = await this.getPathRelation(to.date, toPath, options);
-        
+
         console.log('💱 Relations calculated:', {
             fromRelation,
             toRelation,
             result: value * fromRelation * toRelation
         });
-        
+
         return value * fromRelation * toRelation;
     }
 
@@ -377,7 +377,7 @@ export class CurrencyConverterService {
             const invalidRelations = newRelations.filter(r =>
                 r.dividendId !== currencyId && r.divisorId !== currencyId
             );
-            
+
             if (invalidRelations.length > 0) {
                 throw new Error('All relations must involve the new currency');
             }
@@ -541,7 +541,7 @@ export class CurrencyConverterService {
     }): Promise<{ data: any[]; total: number }> {
         try {
             console.log('Starting getHistoricalIndexes query with options:', options);
-            
+
             const limit = options?.limit || 100;
             const offset = options?.offset || 0;
             const sortField = options?.sortField || 'date';
@@ -552,7 +552,7 @@ export class CurrencyConverterService {
                 .select({ count: sql<number>`count(*)` })
                 .from(currencyIndexes)
                 .where(eq(currencyIndexes.isDeleted, false));
-            
+
             const total = countResult[0]?.count || 0;
 
             // Create aliases for dividend and divisor currencies
@@ -625,7 +625,7 @@ export class CurrencyConverterService {
     }): Promise<{ data: any[]; total: number }> {
         try {
             console.log('Starting getHistoricalIndexesByDates query with options:', options);
-            
+
             const limit = options?.limit || 25;
             const offset = options?.offset || 0;
             const sortOrder = options?.sortOrder || 'desc';
@@ -635,7 +635,7 @@ export class CurrencyConverterService {
                 .select({ count: sql<number>`count(distinct date)` })
                 .from(currencyIndexes)
                 .where(eq(currencyIndexes.isDeleted, false));
-            
+
             const totalDates = countResult[0]?.count || 0;
 
             // Get unique dates with pagination
@@ -699,7 +699,42 @@ export class CurrencyConverterService {
         }
     }
 
-   async getAllRelations() {
+    async getAllRelations() {
         return this.db.db.select().from(currenciesRelations);
+    }
+
+    async getAllHistoricalIndexes() {
+        console.log('Starting getAllHistoricalIndexes query');
+        const dividendCurrency = alias(currencies, 'dividendCurrency');
+        const divisorCurrency = alias(currencies, 'divisorCurrency');
+             const result = await this.db.db
+                .select({
+                    id: currencyIndexes.id,
+                    date: currencyIndexes.date,
+                    currenciesRelationsId: currencyIndexes.currenciesRelationsId,
+                    value: currencyIndexes.value,
+                    isDeleted: currencyIndexes.isDeleted,
+                    editedAt: currencyIndexes.editedAt,
+                    editedBy: currencyIndexes.editedBy,
+                    editedSession: currencyIndexes.editedSession,
+                    dividendCurrencyCode: dividendCurrency.code,
+                    dividendCurrencyLabel: dividendCurrency.label,
+                    divisorCurrencyCode: divisorCurrency.code,
+                    divisorCurrencyLabel: divisorCurrency.label,
+                    op: currenciesRelations.op,
+                })
+                .from(currencyIndexes)
+                .innerJoin(currenciesRelations, eq(currencyIndexes.currenciesRelationsId, currenciesRelations.id))
+                .innerJoin(dividendCurrency, eq(currenciesRelations.dividendId, dividendCurrency.id))
+                .innerJoin(divisorCurrency, eq(currenciesRelations.divisorId, divisorCurrency.id))
+                .where(
+                    and(
+                        eq(currencyIndexes.isDeleted, false),
+                    )
+                )
+                .orderBy(desc(currencyIndexes.date));
+
+        console.log('Query successful, returning', result.length, 'results');
+        return result;
     }
 }

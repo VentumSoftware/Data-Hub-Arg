@@ -133,6 +133,13 @@ export class IndexesController {
         });
     };
 
+    @Public()
+    @Get('all-historical')
+    async getAllHistoricalIndexesByDates() {
+        console.log('getAllHistoricalIndexesByDates called');
+        return await this.currencyConverter.getAllHistoricalIndexes();
+    };
+
     @Get('update-indexes')
     @AuthToken()
     async updateIndexes() {

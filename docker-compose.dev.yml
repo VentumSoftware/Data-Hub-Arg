@@ -91,8 +91,11 @@ services:
       - VITE_HOST=0.0.0.0
       - VITE_PORT=5173
       - VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
-      - VITE_SITE_NAME=${VITE_SITE_NAME:-My App}
-      - VITE_HMR_CLIENT_PORT=${VITE_HMR_CLIENT_PORT:-8080}
+      - VITE_SITE_NAME=${VITE_SITE_NAME:-Indexes}
+      - VITE_HMR_HOST=localhost
+      - VITE_HMR_PORT=8080
+      - VITE_PLAUSIBLE_DOMAIN=${VITE_PLAUSIBLE_DOMAIN:-localhost}
+      - VITE_PLAUSIBLE_URL=${VITE_PLAUSIBLE_URL:-http://localhost:8000}
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes in Docker
       - WATCHPACK_POLLING=true
     # No external ports - only accessible via nginx

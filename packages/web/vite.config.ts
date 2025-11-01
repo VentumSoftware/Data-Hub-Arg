@@ -42,10 +42,11 @@ export default defineConfig(({ mode }) => {
         usePolling: usePolling,
         interval: parseInt(env.VITE_POLL_INTERVAL || '1000'),
       },
-      // Ensure HMR works properly in Docker
+      // Ensure HMR works properly in Docker via nginx proxy
       hmr: {
+        clientPort: parseInt(env.VITE_HMR_PORT || '8080'),
+        protocol: 'ws',
         host: env.VITE_HMR_HOST || 'localhost',
-        port: parseInt(env.VITE_HMR_PORT || env.VITE_PORT || '5173'),
       },
     },
   }

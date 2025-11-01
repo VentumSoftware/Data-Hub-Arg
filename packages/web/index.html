@@ -6,23 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Indexes</title>
     
-    <!-- Plausible Analytics -->
-    <script defer data-domain="%VITE_PLAUSIBLE_DOMAIN%" src="%VITE_PLAUSIBLE_URL%/js/script.js"></script>
-    <script>
-      window.addEventListener('load', function() {
-        console.log('Plausible script should have loaded');
-        if (window.plausible) {
-          console.log('Plausible function is available');
-          // Manually trigger a page view
-          setTimeout(function() {
-            window.plausible('pageview');
-            console.log('Manual page view sent');
-          }, 1000);
-        } else {
-          console.log('Plausible function not found');
-        }
-      });
-    </script>
+    <!-- Plausible Analytics - Disabled (uncomment when Plausible service is running) -->
+    <!-- <script defer data-domain="%VITE_PLAUSIBLE_DOMAIN%" src="%VITE_PLAUSIBLE_URL%/js/script.js"></script> -->
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,142 @@
+name: Deploy to Dev (Manual Droplet)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to app directory or create it
+            if [ ! -d "/home/${{ secrets.DEV_SERVER_USER }}/data-hub-arg" ]; then
+              cd /home/${{ secrets.DEV_SERVER_USER }}
+              git clone -b dev ${{ github.server_url }}/${{ github.repository }}.git data-hub-arg
+            fi
+
+            cd /home/${{ secrets.DEV_SERVER_USER }}/data-hub-arg
+
+            # Pull latest changes
+            git fetch origin
+            git reset --hard origin/dev
+            git clean -fd
+
+            # Create/update .env file
+            cat > .env << 'EOL'
+            APP_NAME=indexes-app
+            NODE_ENV=development
+
+            # Database
+            POSTGRES_DB=${{ secrets.DEV_POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.DEV_POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}
+            POSTGRES_HOST=postgres
+            POSTGRES_PORT=5432
+            DATABASE_URL=postgresql://${{ secrets.DEV_POSTGRES_USER }}:${{ secrets.DEV_POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.DEV_POSTGRES_DB }}
+
+            # Security
+            COOKIE_SECRET=${{ secrets.DEV_COOKIE_SECRET }}
+            AUTH_TOKEN=${{ secrets.AUTH_TOKEN }}
+            SESSION_EXPIRATION_MINUTES=120
+
+            # Google OAuth (optional)
+            GOOGLE_AUTH_CLIENT_ID=${{ secrets.GOOGLE_AUTH_CLIENT_ID }}
+            GOOGLE_AUTH_CLIENT_SECRET=${{ secrets.GOOGLE_AUTH_CLIENT_SECRET }}
+            GOOGLE_AUTH_CALLBACK_URL=http://${{ secrets.DEV_SERVER_HOST }}:8080/api/access/google/redirect
+            GOOGLE_AUTH_RETURN_URL=http://${{ secrets.DEV_SERVER_HOST }}:8080
+
+            # URLs
+            FE_URL=http://${{ secrets.DEV_SERVER_HOST }}:8080
+            VITE_API_URL=http://${{ secrets.DEV_SERVER_HOST }}:8080
+
+            # Ports
+            NGINX_HTTP_PORT=80
+            POSTGRES_EXTERNAL_PORT=5434
+            RABBITMQ_MANAGEMENT_PORT=15673
+            OPENSEARCH_PORT=9201
+            OPENSEARCH_DASHBOARDS_PORT=5602
+            SFTP_PORT=2223
+
+            # Monitoring & Logging
+            OPENSEARCH_TRANSPORT_PORT=9301
+            OPENSEARCH_URL=http://opensearch:9201
+            LOG_LEVEL=info
+            LOG_REQUESTS=false
+
+            # SFTP Configuration
+            SFTP_USERNAME=app_user
+            SFTP_PASSWORD=app_sftp_password
+
+            # System User Configuration
+            SYSTEM_USER_EMAIL=system@indexes.com
+            SYSTEM_USER_ALIAS=System
+            SYSTEM_USER_FIRST_NAME=System
+            SYSTEM_USER_LAST_NAME=User
+
+            # Frontend Configuration
+            VITE_SITE_NAME=Indexes
+            VITE_PLAUSIBLE_DOMAIN=${{ secrets.DEV_SERVER_HOST }}
+            VITE_PLAUSIBLE_URL=http://${{ secrets.DEV_SERVER_HOST }}:8001
+
+            # Plausible Analytics Configuration
+            PLAUSIBLE_PORT=8001
+            PLAUSIBLE_BASE_URL=http://${{ secrets.DEV_SERVER_HOST }}:8001
+            PLAUSIBLE_DISABLE_REGISTRATION=true
+            PLAUSIBLE_DB_PASSWORD=${{ secrets.PLAUSIBLE_DB_PASSWORD }}
+            PLAUSIBLE_SECRET_KEY=${{ secrets.PLAUSIBLE_SECRET_KEY }}
+            PLAUSIBLE_ADMIN_NAME=Admin User
+            PLAUSIBLE_ADMIN_EMAIL=admin@localhost
+            PLAUSIBLE_ADMIN_PASSWORD=${{ secrets.PLAUSIBLE_ADMIN_PASSWORD }}
+            PLAUSIBLE_SITE_DOMAIN=${{ secrets.DEV_SERVER_HOST }}
+            EOL
+
+            # Stop existing containers
+            docker compose --env-file .env -f devops/docker/docker-compose.dev.yml down || true
+
+            # Clean up old images
+            docker system prune -f
+
+            # Build and start containers
+            docker compose --env-file .env -f devops/docker/docker-compose.dev.yml up -d --build
+
+            # Wait for database to be ready
+            echo "Waiting for database..."
+            sleep 15
+
+            # Run migrations (using the db.js script)
+            docker exec indexes-app-api-dev npm run migration:push || echo "Migration skipped or failed"
+
+            # Show container status
+            docker ps
+
+            echo "✅ Deployment complete!"
+            echo "🌐 Access your app at: http://${{ secrets.DEV_SERVER_HOST }}:8080"
+
+      - name: Output Deployment Info
+        run: |
+          echo "## 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🌐 Access Points:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Application**: http://${{ secrets.DEV_SERVER_HOST }}:8080" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: http://${{ secrets.DEV_SERVER_HOST }}:8080/api" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Docs**: http://${{ secrets.DEV_SERVER_HOST }}:8080/api/docs" >> $GITHUB_STEP_SUMMARY
+          echo "- **OpenSearch Dashboards**: http://${{ secrets.DEV_SERVER_HOST }}:5602" >> $GITHUB_STEP_SUMMARY
+          echo "- **RabbitMQ Management**: http://${{ secrets.DEV_SERVER_HOST }}:15673" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 SSH Access:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "ssh ${{ secrets.DEV_SERVER_USER }}@${{ secrets.DEV_SERVER_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

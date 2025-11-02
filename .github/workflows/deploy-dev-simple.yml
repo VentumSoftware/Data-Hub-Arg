@@ -22,12 +22,12 @@ jobs:
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: |
             # Navigate to app directory or create it
-            if [ ! -d "/home/${{ secrets.DEV_SERVER_USER }}/data-hub-arg" ]; then
-              cd /home/${{ secrets.DEV_SERVER_USER }}
+            if [ ! -d "$HOME/data-hub-arg" ]; then
+              cd $HOME
               git clone -b dev ${{ github.server_url }}/${{ github.repository }}.git data-hub-arg
             fi
 
-            cd /home/${{ secrets.DEV_SERVER_USER }}/data-hub-arg
+            cd $HOME/data-hub-arg
 
             # Pull latest changes
             git fetch origin

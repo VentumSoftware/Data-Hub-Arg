@@ -33,11 +33,12 @@ const args = process.argv.slice(2);
 const command = args[0];
 const database = args[1] || 'main'; // Default to main database
 
-// Load environment variables
+// Load environment variables and detect which compose file to use
 function loadEnvFile() {
-  const envPath = path.join(process.cwd(), '.env');
   const env = {};
-  
+
+  // Try to load from .env file
+  const envPath = path.join(process.cwd(), '.env');
   if (fs.existsSync(envPath)) {
     const envFile = fs.readFileSync(envPath, 'utf8');
     envFile.split('\n').forEach(line => {
@@ -47,8 +48,85 @@ function loadEnvFile() {
       }
     });
   }
-  
+
   return env;
+}
+
+// Detect which docker-compose file is being used based on running containers
+function detectComposeFile() {
+  const composeFiles = [
+    'devops/docker/docker-compose.dev.yml',
+    'devops/docker/docker-compose.staging.yml',
+    'devops/docker/docker-compose.yml'
+  ];
+
+  for (const file of composeFiles) {
+    const fullPath = path.join(process.cwd(), file);
+    if (!fs.existsSync(fullPath)) continue;
+
+    try {
+      // Check if any containers from this compose file are running
+      const result = execSync(`docker compose -f ${file} ps --format json 2>/dev/null || echo "[]"`, {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore']
+      });
+
+      const containers = JSON.parse(result.trim() || '[]');
+      if (Array.isArray(containers) && containers.length > 0) {
+        return file;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  // Default to dev if nothing is running
+  return 'devops/docker/docker-compose.dev.yml';
+}
+
+// Get APP_NAME from running containers or compose file
+function getAppNameFromCompose(composeFile) {
+  // First, try to detect from running containers
+  try {
+    const runningContainers = execSync('docker ps --format "{{.Names}}"', {
+      encoding: 'utf8'
+    }).trim().split('\n');
+
+    // Look for container names matching pattern: name-service-env or name-service
+    for (const container of runningContainers) {
+      // Match patterns: app-name-api-dev, app-name-api, app-api-dev, app-api
+      const match = container.match(/^(.+?)-(api|web|postgres|nginx|rabbitmq)(-dev|-prod|-staging)?$/);
+      if (match) {
+        return match[1];
+      }
+    }
+  } catch (error) {
+    // Continue to next method
+  }
+
+  // Fall back to parsing compose config
+  try {
+    const result = execSync(`docker compose -f ${composeFile} config --format json`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    });
+
+    const config = JSON.parse(result);
+    const services = Object.values(config.services || {});
+
+    if (services.length > 0) {
+      const firstContainer = services[0].container_name || '';
+      // Container name format: ${APP_NAME}-service[-env]
+      const match = firstContainer.match(/^(.+?)-(api|web|postgres|nginx|rabbitmq)/);
+      if (match) {
+        return match[1].replace(/-dev$/, '').replace(/-prod$/, '').replace(/-staging$/, '');
+      }
+    }
+  } catch (error) {
+    // Silent fail
+  }
+
+  return 'app';
 }
 
 // Check if Docker is running
@@ -73,15 +151,43 @@ function isContainerRunning(containerName) {
   }
 }
 
+// Find actual running container name
+function findRunningContainer(appName, service) {
+  try {
+    // Try different naming patterns
+    const patterns = [
+      `${appName}-${service}-dev`,
+      `${appName}-${service}-prod`,
+      `${appName}-${service}-staging`,
+      `${appName}-${service}`
+    ];
+
+    for (const pattern of patterns) {
+      const result = execSync(`docker ps --filter "name=${pattern}" --format "{{.Names}}"`, {
+        encoding: 'utf8'
+      }).trim();
+
+      if (result) {
+        return result;
+      }
+    }
+  } catch (error) {
+    // Continue
+  }
+
+  // Fallback to basic pattern
+  return `${appName}-${service}`;
+}
+
 // Get database configuration for a service
 function getDatabaseConfig(database, env) {
   const appName = env.APP_NAME || 'app';
-  
+
   // Database naming convention: app_<database>_local for development
   // e.g., app_main_local, app_auth_local, app_users_local
   const dbConfigs = {
     main: {
-      container: `${appName}-api`,
+      container: findRunningContainer(appName, 'api'),
       dbName: env.POSTGRES_DB || 'app_main',
       dbUser: env.POSTGRES_USER || 'app_user',
       dbPassword: env.POSTGRES_PASSWORD || 'app_password',
@@ -131,15 +237,15 @@ function execInContainer(containerName, command, dbConfig, description) {
   
   // Set environment variables for the command
   const envVars = [
-    `DATABASE_URL="${databaseUrl}"`,
-    `POSTGRES_DB="${dbConfig.dbName}"`,
-    `POSTGRES_USER="${dbConfig.dbUser}"`,
-    `POSTGRES_PASSWORD="${dbConfig.dbPassword}"`,
-    `POSTGRES_HOST="${dbConfig.dbHost}"`,
-    `POSTGRES_PORT="${dbConfig.dbPort}"`
+    `-e DATABASE_URL="${databaseUrl}"`,
+    `-e POSTGRES_DB="${dbConfig.dbName}"`,
+    `-e POSTGRES_USER="${dbConfig.dbUser}"`,
+    `-e POSTGRES_PASSWORD="${dbConfig.dbPassword}"`,
+    `-e POSTGRES_HOST="${dbConfig.dbHost}"`,
+    `-e POSTGRES_PORT="${dbConfig.dbPort}"`
   ].join(' ');
-  
-  const fullCommand = `docker exec -e ${envVars} ${containerName} ${command}`;
+
+  const fullCommand = `docker exec ${envVars} ${containerName} ${command}`;
   
   try {
     execSync(fullCommand, { stdio: 'inherit' });
@@ -257,25 +363,35 @@ async function main() {
     log.error('Docker is not running. Please start Docker first.');
     process.exit(1);
   }
-  
+
   // Show help if no command
   if (!command || command === 'help') {
     showHelp();
     process.exit(0);
   }
-  
+
   // Validate command
   if (!commands[command]) {
     log.error(`Unknown command: ${command}`);
     showHelp();
     process.exit(1);
   }
-  
-  // Load environment and get database configuration
+
+  // Detect which compose file is being used
+  const composeFile = detectComposeFile();
+  log.info(`Detected compose file: ${composeFile}`);
+
+  // Load environment
   const env = loadEnvFile();
+
+  // Always try to get APP_NAME from running containers first, then fall back to .env
+  const detectedAppName = getAppNameFromCompose(composeFile);
+  env.APP_NAME = detectedAppName || env.APP_NAME || 'app';
+
   const dbConfig = getDatabaseConfig(database, env);
-  
+
   log.header(`Database Management: ${command}`);
+  log.info(`Environment: ${env.APP_NAME}`);
   log.info(`Database: ${database} (${dbConfig.dbName})`);
   log.info(`Container: ${dbConfig.container}`);
   

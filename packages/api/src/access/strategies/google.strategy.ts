@@ -4,11 +4,16 @@ import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor() {
+    // Provide default values if Google OAuth is not configured
+    const clientID = process.env.GOOGLE_AUTH_CLIENT_ID || 'placeholder-client-id';
+    const clientSecret = process.env.GOOGLE_AUTH_CLIENT_SECRET || 'placeholder-secret';
+    const callbackURL = process.env.GOOGLE_AUTH_CALLBACK_URL || 'http://localhost:3000/api/access/google/redirect';
+
     super({
-      clientID: process.env.GOOGLE_AUTH_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET!,
-      callbackURL: process.env.GOOGLE_AUTH_CALLBACK_URL!,
-      returnURL: process.env.GOOGLE_AUTH_RETURN_URL!,
+      clientID,
+      clientSecret,
+      callbackURL,
+      returnURL: process.env.GOOGLE_AUTH_RETURN_URL || 'http://localhost:5173',
       scope: ['email', 'profile'],
       accessType: 'offline',
       prompt: 'consent',

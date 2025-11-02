@@ -93,6 +93,7 @@ npm run deploy:prod
 - **packages/web/** - React frontend with Vite, Material-UI, Redux Toolkit
 - **packages/mobile/** - React Native app with Expo
 - **packages/shared/** - Shared utilities across packages
+- **devops/docker/** - Docker Compose configurations (dev, staging, production)
 - **services/** - Supporting services (nginx, message-publisher, sftp)
 - **scripts/** - Cross-platform build and deployment scripts
 
@@ -143,7 +144,7 @@ npm run deploy:prod
 
 ### Infrastructure & Services
 
-**Docker Compose Services (docker-compose.dev.yml):**
+**Docker Compose Services (devops/docker/docker-compose.dev.yml):**
 - **postgres** - PostgreSQL 15 database (port 5434 external)
 - **api** - NestJS backend with hot-reload
 - **web** - Vite frontend with HMR
@@ -208,14 +209,24 @@ npm run test -- <test-file-path>
 - Guards check user permissions against database
 - Scope-based permissions supported (e.g., per-group access)
 
+## Environment Configuration
+
+Docker Compose has built-in defaults in `devops/docker/docker-compose.dev.yml`. Environment file hierarchy:
+1. `.env.local` - Personal overrides (gitignored)
+2. `.env` - Project overrides (gitignored)
+3. `docker-compose.dev.yml` defaults - Used if no `.env` exists
+
+**For development**: Just `npm run dev` - no `.env` file needed!
+
+**To customize**: `cp .env.example .env` and edit values
+
 ## Important Notes
 
 - **All external access goes through nginx** - don't expose services directly
 - **Hot reload is enabled** - file changes auto-reload in Docker
 - **PostgreSQL CDC tracks all changes** - use for audit trails and event sourcing
 - **Session management** - sessions stored in PostgreSQL, not Redis
-- **Environment variables** - copy `.env.example` to `.env` and configure
-- **Ports are configurable** - defaults avoid conflicts (check docker-compose.dev.yml comments)
+- **Ports are configurable** - defaults avoid conflicts (check devops/docker/docker-compose.dev.yml)
 - **Mobile app** - separate Expo-based React Native app in packages/mobile/
 - **Drizzle ORM** - use `npm run migration:push` to sync schema changes
 - **Message broker** - RabbitMQ for async operations and event publishing

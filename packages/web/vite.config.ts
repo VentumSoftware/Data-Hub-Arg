@@ -39,6 +39,7 @@ export default defineConfig(({ mode }) => {
       cors: true,
       allowedHosts: [
         'localhost',
+        '.data-hub-arg.org',
         env.VITE_ALLOWED_HOST, // Allow custom host from env
       ].filter(Boolean),
       // Enable polling for Windows/Docker compatibility

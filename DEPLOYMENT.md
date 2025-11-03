@@ -251,7 +251,7 @@ http {
 ```bash
 # On your droplet
 mkdir -p services/nginx/ssl
-nano services/nginx/ssl/cert.pem  # Paste certificate
+nano mkdir -p services/nginx/ssl  # Paste certificate
 nano services/nginx/ssl/key.pem   # Paste private key
 chmod 600 services/nginx/ssl/key.pem
 ```

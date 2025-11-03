@@ -85,7 +85,8 @@ Add these secrets:
    - Value: `indexes_user`
 
 6. **DEV_POSTGRES_PASSWORD**
-   - Generate with: `openssl rand -base64 32`
+   - Generate with: `openssl rand -hex 32`
+   - **IMPORTANT**: Use `-hex` instead of `-base64` to avoid special characters (+, =, /) that can cause authentication issues with PostgreSQL
 
 ### Application Secrets:
 
@@ -392,13 +393,19 @@ echo ""
 echo "Copy these values to GitHub Secrets:"
 echo ""
 echo "DEV_POSTGRES_PASSWORD:"
-openssl rand -base64 32
+openssl rand -hex 32
 echo ""
 echo "DEV_COOKIE_SECRET:"
 openssl rand -hex 32
 echo ""
 echo "AUTH_TOKEN:"
 openssl rand -hex 32
+echo ""
+echo "PLAUSIBLE_DB_PASSWORD:"
+openssl rand -hex 32
+echo ""
+echo "PLAUSIBLE_SECRET_KEY:"
+openssl rand -hex 64
 echo ""
 ```
 

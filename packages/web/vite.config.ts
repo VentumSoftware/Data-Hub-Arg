@@ -35,8 +35,12 @@ export default defineConfig(({ mode }) => {
     server: {
       host: env.VITE_HOST || '0.0.0.0',
       port: parseInt(env.VITE_PORT || '5173'),
-      // Allow connections from Docker containers
+      // Allow connections from Docker containers and custom domains
       cors: true,
+      allowedHosts: [
+        'localhost',
+        env.VITE_ALLOWED_HOST, // Allow custom host from env
+      ].filter(Boolean),
       // Enable polling for Windows/Docker compatibility
       watch: {
         usePolling: usePolling,
